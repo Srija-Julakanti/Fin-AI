@@ -1,107 +1,133 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { useState } from "react";
+import HomeDashboard from "../../components/HomeDashboard";
+import ForecastScreen from "../../components/ForecastScreen";
+import CreditCardOptimizer from "../../components/CreditCardOptimizer";
+import BudgetManager from "../../components/BudgetManager";
+import SettingsScreen from "../../components/SettingsScreen";
+import LoginScreen from "../../components/LoginScreen";
+import RegisterScreen from "../../components/RegisterScreen";
+import OnboardingScreens from "../../components/OnboardingScreens";
+import AddCardScreen from "../../components/AddCardScreen";
+import AddExpenseScreen from "../../components/AddExpenseScreen";
+import CreateBudgetScreen from "../../components/CreateBudgetScreen";
+import FamilyFinance from "../../components/FamilyFinance";
+import SubscriptionManager from "../../components/SubscriptionManager";
+import FraudAlerts from "../../components/FraudAlerts";
+import CategoryTransactions from "../../components/CategoryTransactions";
+import BottomNav from "../../components/shared/BottomNav";
 
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
+export default function App() {
+	const [currentScreen, setCurrentScreen] = useState("login");
+	const [isAuthenticated, setIsAuthenticated] = useState(false);
+	const [onboardingComplete, setOnboardingComplete] = useState(false);
+	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-export default function HomeScreen() {
+	const handleLogin = () => {
+		setIsAuthenticated(true);
+		if (!onboardingComplete) {
+			setCurrentScreen("onboarding");
+		} else {
+			setCurrentScreen("home");
+		}
+	};
+
+	const handleRegister = () => {
+		setIsAuthenticated(true);
+		setCurrentScreen("onboarding");
+	};
+
+	const handleOnboardingComplete = () => {
+		setOnboardingComplete(true);
+		setCurrentScreen("home");
+	};
+
+	const handleCategorySelect = (category: string) => {
+		setSelectedCategory(category);
+		setCurrentScreen("categoryTransactions");
+	};
+
+	const navigateTo = (screen: string) => {
+		setCurrentScreen(screen);
+	};
+
+	// Not authenticated - show auth screens
+	if (!isAuthenticated) {
+		return (
+			<div className="min-h-screen bg-gradient-to-br from-teal-600 via-blue-600 to-purple-600">
+				{currentScreen === "login" && (
+					<LoginScreen
+						onLogin={handleLogin}
+						onNavigateToRegister={() => setCurrentScreen("register")}
+					/>
+				)}
+				{currentScreen === "register" && (
+					<RegisterScreen
+						onRegister={handleRegister}
+						onLogin={() => setCurrentScreen("login")}
+					/>
+				)}
+			</div>
+		);
+	}
+
+	// Authenticated but onboarding not complete
+	if (!onboardingComplete && currentScreen === "onboarding") {
+		return <OnboardingScreens onComplete={handleOnboardingComplete} />;
+	}
+
+	// Main app screens
 	return (
-		<ParallaxScrollView
-			headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-			headerImage={
-				<Image
-					source={require("@/assets/images/partial-react-logo.png")}
-					style={styles.reactLogo}
-				/>
-			}
-		>
-			<ThemedView style={styles.titleContainer}>
-				<ThemedText type="title">Welcome!</ThemedText>
-				<HelloWave />
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<ThemedText type="subtitle">Step 1: Try it</ThemedText>
-				<ThemedText>
-					Edit{" "}
-					<ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-					to see changes. Press{" "}
-					<ThemedText type="defaultSemiBold">
-						{Platform.select({
-							ios: "cmd + d",
-							android: "cmd + m",
-							web: "F12",
-						})}
-					</ThemedText>{" "}
-					to open developer tools.
-				</ThemedText>
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<Link href="/modal">
-					<Link.Trigger>
-						<ThemedText type="subtitle">Step 2: Explore</ThemedText>
-					</Link.Trigger>
-					<Link.Preview />
-					<Link.Menu>
-						<Link.MenuAction
-							title="Action"
-							icon="cube"
-							onPress={() => alert("Action pressed")}
-						/>
-						<Link.MenuAction
-							title="Share"
-							icon="square.and.arrow.up"
-							onPress={() => alert("Share pressed")}
-						/>
-						<Link.Menu title="More" icon="ellipsis">
-							<Link.MenuAction
-								title="Delete"
-								icon="trash"
-								destructive
-								onPress={() => alert("Delete pressed")}
-							/>
-						</Link.Menu>
-					</Link.Menu>
-				</Link>
+		<div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
+			{/* Main Content */}
+			<div className="max-w-md mx-auto min-h-screen bg-white dark:bg-slate-900">
+				{currentScreen === "home" && <HomeDashboard onNavigate={navigateTo} />}
+				{currentScreen === "forecast" && <ForecastScreen />}
+				{currentScreen === "cards" && (
+					<CreditCardOptimizer onNavigate={navigateTo} />
+				)}
+				{currentScreen === "budget" && (
+					<BudgetManager onNavigate={navigateTo} />
+				)}
+				{currentScreen === "settings" && (
+					<SettingsScreen onNavigate={navigateTo} />
+				)}
 
-				<ThemedText>
-					{`Tap the Explore tab to learn more about what's included in this starter app.`}
-				</ThemedText>
-			</ThemedView>
-			<ThemedView style={styles.stepContainer}>
-				<ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-				<ThemedText>
-					{`When you're ready, run `}
-					<ThemedText type="defaultSemiBold">
-						npm run reset-project
-					</ThemedText>{" "}
-					to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-					directory. This will move the current{" "}
-					<ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-					<ThemedText type="defaultSemiBold">app-example</ThemedText>.
-				</ThemedText>
-			</ThemedView>
-		</ParallaxScrollView>
+				{/* Modal Screens */}
+				{currentScreen === "addCard" && (
+					<AddCardScreen onClose={() => setCurrentScreen("cards")} />
+				)}
+				{currentScreen === "addExpense" && (
+					<AddExpenseScreen onClose={() => setCurrentScreen("home")} />
+				)}
+				{currentScreen === "createBudget" && (
+					<CreateBudgetScreen onClose={() => setCurrentScreen("budget")} />
+				)}
+				{currentScreen === "familyFinance" && (
+					<FamilyFinance onBack={() => setCurrentScreen("home")} />
+				)}
+				{currentScreen === "subscriptions" && (
+					<SubscriptionManager onBack={() => setCurrentScreen("home")} />
+				)}
+				{currentScreen === "fraudAlerts" && (
+					<FraudAlerts onBack={() => setCurrentScreen("home")} />
+				)}
+				{currentScreen === "categoryTransactions" && selectedCategory && (
+					<CategoryTransactions
+						category={selectedCategory}
+						onBack={() => setCurrentScreen("forecast")}
+					/>
+				)}
+			</div>
+
+			{/* Bottom Navigation */}
+			{["home", "forecast", "cards", "budget", "settings"].includes(
+				currentScreen
+			) && (
+				<BottomNav
+					currentScreen={currentScreen}
+					onNavigate={setCurrentScreen}
+				/>
+			)}
+		</div>
 	);
 }
-
-const styles = StyleSheet.create({
-	titleContainer: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: 8,
-	},
-	stepContainer: {
-		gap: 8,
-		marginBottom: 8,
-	},
-	reactLogo: {
-		height: 178,
-		width: 290,
-		bottom: 0,
-		left: 0,
-		position: "absolute",
-	},
-});
