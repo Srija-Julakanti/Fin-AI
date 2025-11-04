@@ -3,7 +3,7 @@ const https = require('https');
 
 const hecUrl = process.env.SPLUNK_HEC_URL;
 const hecToken = process.env.SPLUNK_HEC_TOKEN;
-const index = process.env.SPLUNK_INDEX || 'finai';
+const index = process.env.SPLUNK_INDEX || 'main';
 
 // Simple Splunk logger
 async function logEvent(event, fields = {}) {
