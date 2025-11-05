@@ -12,8 +12,8 @@ import {
 	TextInput,
 	View,
 } from "react-native";
+import FinAICard from "../components/FinAICard";
 import { useAuth } from "../contexts/AuthContext";
-import FinAICard from "./components/FinAICard";
 
 // Optional: persist token securely
 // import * as SecureStore from "expo-secure-store";
@@ -30,7 +30,6 @@ export default function Login() {
 	const router = useRouter();
 
 	const handleSubmit = async () => {
-		console.log(email, password);
 		if (!email || !password) {
 			Alert.alert("Missing fields", "Please enter email and password.");
 			return;
@@ -38,7 +37,6 @@ export default function Login() {
 
 		setIsLoading(true);
 		try {
-			console.log("before fetch", email, password);
 			const res = await fetch(`${API_BASE}/api/auth/login`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -46,7 +44,6 @@ export default function Login() {
 			});
 
 			const data: any = await res.json().catch(() => ({}));
-			console.log("response:", data);
 
 			if (res.status !== 200) {
 				const msg =
@@ -67,7 +64,7 @@ export default function Login() {
 			login(user, token);
 
 			// Navigation happens automatically since _layout checks `user`
-			router.replace("/");
+			router.replace("/(tabs)");
 		} catch (err: any) {
 			Alert.alert("Sign in failed", err?.message ?? "Please try again.");
 		} finally {
