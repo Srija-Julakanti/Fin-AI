@@ -1,10 +1,16 @@
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
-require("dotenv").config(); // ✅ load .env once — no need to call dotenv.config() again
+const mongoose = require("mongoose");
 
+// ✅ Enable CORS for all requests (no need for app.options in Express 5)
 const app = express();
 app.use(cors());
+
+require("dotenv").config();
+
+const authRoutes = require("./src/routes/authRoutes");
+
+// ✅ Parse JSON
 app.use(express.json());
 
 // test route
@@ -31,13 +37,20 @@ setInterval(() => {
   logEvent(logData); // send to Splunk
   console.log("✅ Sent automatic event to Splunk:", logData);
 }, 10000); // every 10 seconds
+// ✅ Test route
+app.get("/", (req, res) => {
+	res.status(200).send("Backend is running ✅");
+});
+
+// ✅ API routes
+app.use("/api/auth", authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-// connect to MongoDB
+// ✅ Connect to MongoDB
 mongoose
 	.connect(process.env.MONGO_URI)
-	.then(() =>
-		app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`))
-	)
+	.then(() => {
+		app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+	})
 	.catch((err) => console.error("❌ MongoDB connection error:", err));
