@@ -38,6 +38,7 @@ const loginUser = async ({ email, password }) => {
 
   return {
     message: "Login successful",
+    status:200,
     user: {
       id: user._id,
       name: `${user.firstName} ${user.lastName}`,

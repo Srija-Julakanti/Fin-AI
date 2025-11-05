@@ -41,3 +41,6 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Ignore npm lock file
+package-lock.json
