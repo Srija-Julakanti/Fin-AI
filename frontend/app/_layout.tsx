@@ -1,26 +1,17 @@
-import { Redirect, Stack } from "expo-router";
-import { AuthProvider, useAuth } from "../contexts/AuthContext";
-
-function RootLayoutInner() {
-	const { user } = useAuth();
-
-	if (user) {
-		// When logged in → go to home tabs
-		return <Redirect href="/(tabs)" />;
-	}
-
-	return (
-		<Stack>
-			<Stack.Screen name="login" options={{ title: "Login" }} />
-			<Stack.Screen name="register" options={{ title: "Register" }} />
-		</Stack>
-	);
-}
+import { Stack } from "expo-router";
+import { AuthProvider } from "../contexts/AuthContext";
 
 export default function RootLayout() {
 	return (
 		<AuthProvider>
-			<RootLayoutInner />
+			<Stack screenOptions={{ headerShown: false }}>
+				{/* 👇 Make the tabs group a known route */}
+				<Stack.Screen name="(tabs)" />
+
+				{/* Auth screens */}
+				<Stack.Screen name="login" />
+				<Stack.Screen name="register" />
+			</Stack>
 		</AuthProvider>
 	);
 }
