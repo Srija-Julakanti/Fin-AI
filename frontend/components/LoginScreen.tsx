@@ -1,133 +1,308 @@
-import { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import FinAICard from './shared/FinAICard';
-import { Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
+import React, { useState } from "react";
+import {
+	View,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	StyleSheet,
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	useColorScheme,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface LoginScreenProps {
-  onLogin: () => void;
-  onNavigateToRegister: () => void;
+export default function LoginScreen({ navigation }: any) {
+	const scheme = useColorScheme();
+	const isDark = scheme === "dark";
+
+	const [email, setEmail] = useState("");
+	const [password, setPassword] = useState("");
+	const [showPassword, setShowPassword] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+
+	const handleLogin = async () => {
+		setIsLoading(true);
+		setTimeout(async () => {
+			await AsyncStorage.setItem("isAuthenticated", "true");
+			setIsLoading(false);
+			// Navigation handled automatically by App.tsx
+		}, 1000);
+	};
+
+	return (
+		<LinearGradient
+			colors={["#0d9488", "#3b82f6", "#8b5cf6"]}
+			start={{ x: 0, y: 0 }}
+			end={{ x: 1, y: 1 }}
+			style={styles.gradient}
+		>
+			<SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+				<KeyboardAvoidingView
+					behavior={Platform.OS === "ios" ? "padding" : "height"}
+					style={{ flex: 1 }}
+				>
+					<ScrollView
+						contentContainerStyle={styles.content}
+						keyboardShouldPersistTaps="handled"
+						showsVerticalScrollIndicator={false}
+					>
+						{/* Logo & Title */}
+						<View style={styles.logoContainer}>
+							<View style={styles.logo}>
+								<Ionicons name="sparkles" size={40} color="#0d9488" />
+							</View>
+							<Text style={styles.title}>Welcome to Fin-AI</Text>
+							<Text style={styles.subtitle}>
+								Your AI Personal Finance Assistant
+							</Text>
+						</View>
+
+						{/* Login Form */}
+						<View style={styles.card}>
+							<View style={styles.inputContainer}>
+								<Text style={styles.label}>Email Address</Text>
+								<View style={styles.inputWrapper}>
+									<Ionicons
+										name="mail"
+										size={20}
+										color="#64748b"
+										style={styles.inputIcon}
+									/>
+									<TextInput
+										style={styles.input}
+										placeholder="your.email@example.com"
+										placeholderTextColor="#94a3b8"
+										value={email}
+										onChangeText={setEmail}
+										keyboardType="email-address"
+										autoCapitalize="none"
+										autoCorrect={false}
+									/>
+								</View>
+							</View>
+
+							<View style={styles.inputContainer}>
+								<Text style={styles.label}>Password</Text>
+								<View style={styles.inputWrapper}>
+									<Ionicons
+										name="lock-closed"
+										size={20}
+										color="#64748b"
+										style={styles.inputIcon}
+									/>
+									<TextInput
+										style={styles.input}
+										placeholder="Enter your password"
+										placeholderTextColor="#94a3b8"
+										value={password}
+										onChangeText={setPassword}
+										secureTextEntry={!showPassword}
+										autoCapitalize="none"
+									/>
+									<TouchableOpacity
+										style={styles.eyeButton}
+										onPress={() => setShowPassword(!showPassword)}
+									>
+										<Ionicons
+											name={showPassword ? "eye-off" : "eye"}
+											size={20}
+											color="#64748b"
+										/>
+									</TouchableOpacity>
+								</View>
+							</View>
+
+							<TouchableOpacity style={styles.forgotPassword}>
+								<Text style={styles.forgotText}>Forgot password?</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								onPress={handleLogin}
+								disabled={isLoading}
+								activeOpacity={0.8}
+							>
+								<LinearGradient
+									colors={["#0d9488", "#0f766e"]}
+									start={{ x: 0, y: 0 }}
+									end={{ x: 1, y: 0 }}
+									style={styles.loginButton}
+								>
+									<Text style={styles.loginText}>
+										{isLoading ? "Signing in..." : "Sign In"}
+									</Text>
+								</LinearGradient>
+							</TouchableOpacity>
+						</View>
+
+						{/* Register Link */}
+						<View style={styles.registerContainer}>
+							<Text style={styles.registerText}>
+								Don&#39;t have an account?
+							</Text>
+							<TouchableOpacity onPress={() => navigation.navigate("Register")}>
+								<Text style={styles.registerLink}>Create Account</Text>
+							</TouchableOpacity>
+						</View>
+
+						{/* Features */}
+						<View style={styles.features}>
+							<View style={styles.featureItem}>
+								<Ionicons name="shield-checkmark" size={20} color="#fff" />
+								<Text style={styles.featureText}>Bank-level encryption</Text>
+							</View>
+							<View style={styles.featureItem}>
+								<Ionicons name="sparkles" size={20} color="#fff" />
+								<Text style={styles.featureText}>AI-powered insights</Text>
+							</View>
+							<View style={styles.featureItem}>
+								<Ionicons name="wallet" size={20} color="#fff" />
+								<Text style={styles.featureText}>Smart budget tracking</Text>
+							</View>
+						</View>
+					</ScrollView>
+				</KeyboardAvoidingView>
+			</SafeAreaView>
+		</LinearGradient>
+	);
 }
 
-export default function LoginScreen({ onLogin, onNavigateToRegister }: LoginScreenProps) {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin();
-    }, 1500);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-teal-500 via-blue-500 to-purple-600 flex items-center justify-center p-6">
-      <div className="w-full max-w-md space-y-6">
-        {/* Logo & Header */}
-        <div className="text-center space-y-3">
-          <div className="bg-white dark:bg-slate-800 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
-            <Sparkles className="w-10 h-10 text-teal-600" />
-          </div>
-          <div>
-            <h1 className="text-white text-3xl">Welcome to Fin-AI</h1>
-            <p className="text-white/80 mt-2">Your AI Personal Finance Assistant</p>
-          </div>
-        </div>
-
-        {/* Login Form */}
-        <FinAICard className="bg-white dark:bg-slate-800">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="dark:text-slate-200">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="dark:text-slate-200">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="pl-10 pr-10 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                <input type="checkbox" className="rounded" />
-                Remember me
-              </label>
-              <button type="button" className="text-sm text-teal-600 dark:text-teal-400 hover:underline">
-                Forgot password?
-              </button>
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full h-12 bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-        </FinAICard>
-
-        {/* Register Link */}
-        <div className="text-center">
-          <p className="text-white/90">
-            Do not have an account?{' '}
-            <button
-              onClick={onNavigateToRegister}
-              className="text-white hover:underline"
-            >
-              Create Account
-            </button>
-          </p>
-        </div>
-
-        {/* Features */}
-        <FinAICard className="bg-white/10 backdrop-blur-sm border-2 border-white/20">
-          <div className="space-y-2 text-white">
-            <p className="text-sm opacity-90">✓ Bank-level encryption</p>
-            <p className="text-sm opacity-90">✓ AI-powered insights</p>
-            <p className="text-sm opacity-90">✓ Smart budget tracking</p>
-            <p className="text-sm opacity-90">✓ Family finance management</p>
-          </div>
-        </FinAICard>
-      </div>
-    </div>
-  );
-}
+const styles = StyleSheet.create({
+	gradient: {
+		flex: 1,
+	},
+	container: {
+		flex: 1,
+	},
+	content: {
+		flexGrow: 1,
+		justifyContent: "center",
+		padding: 24,
+	},
+	logoContainer: {
+		alignItems: "center",
+		marginBottom: 40,
+	},
+	logo: {
+		width: 80,
+		height: 80,
+		borderRadius: 24,
+		backgroundColor: "#fff",
+		justifyContent: "center",
+		alignItems: "center",
+		marginBottom: 16,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.2,
+		shadowRadius: 8,
+		elevation: 8,
+	},
+	title: {
+		fontSize: 32,
+		fontWeight: "bold",
+		color: "#fff",
+		marginBottom: 8,
+	},
+	subtitle: {
+		fontSize: 16,
+		color: "rgba(255, 255, 255, 0.8)",
+	},
+	card: {
+		backgroundColor: "#fff",
+		borderRadius: 24,
+		padding: 24,
+		shadowColor: "#000",
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.1,
+		shadowRadius: 12,
+		elevation: 8,
+	},
+	inputContainer: {
+		marginBottom: 16,
+	},
+	label: {
+		fontSize: 14,
+		fontWeight: "600",
+		color: "#1e293b",
+		marginBottom: 8,
+	},
+	inputWrapper: {
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#f1f5f9",
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: "#e2e8f0",
+		paddingHorizontal: 16,
+	},
+	inputIcon: {
+		marginRight: 12,
+	},
+	input: {
+		flex: 1,
+		height: 48,
+		fontSize: 16,
+		color: "#1e293b",
+	},
+	eyeButton: {
+		padding: 4,
+	},
+	forgotPassword: {
+		alignSelf: "flex-end",
+		marginBottom: 24,
+	},
+	forgotText: {
+		color: "#0d9488",
+		fontSize: 14,
+		fontWeight: "600",
+	},
+	loginButton: {
+		height: 56,
+		borderRadius: 16,
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	loginText: {
+		fontSize: 18,
+		fontWeight: "bold",
+		color: "#fff",
+	},
+	registerContainer: {
+		flexDirection: "row",
+		justifyContent: "center",
+		marginTop: 24,
+	},
+	registerText: {
+		color: "#fff",
+		fontSize: 14,
+	},
+	registerLink: {
+		color: "#fff",
+		fontSize: 14,
+		fontWeight: "bold",
+		marginLeft: 4,
+		textDecorationLine: "underline",
+	},
+	features: {
+		marginTop: 32,
+		backgroundColor: "rgba(255, 255, 255, 0.1)",
+		borderRadius: 16,
+		padding: 20,
+		borderWidth: 2,
+		borderColor: "rgba(255, 255, 255, 0.2)",
+	},
+	featureItem: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 12,
+	},
+	featureText: {
+		color: "#fff",
+		fontSize: 14,
+		marginLeft: 12,
+		opacity: 0.9,
+	},
+});

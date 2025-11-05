@@ -1,133 +1,234 @@
-import { useState } from "react";
-import HomeDashboard from "../../components/HomeDashboard";
-import ForecastScreen from "../../components/ForecastScreen";
-import CreditCardOptimizer from "../../components/CreditCardOptimizer";
-import BudgetManager from "../../components/BudgetManager";
-import SettingsScreen from "../../components/SettingsScreen";
+{/* import React, { useState, useEffect } from "react";
+import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { StatusBar } from "expo-status-bar";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+import { View, useColorScheme } from "react-native";
+
+// Import screens
 import LoginScreen from "../../components/LoginScreen";
 import RegisterScreen from "../../components/RegisterScreen";
-import OnboardingScreens from "../../components/OnboardingScreens";
-import AddCardScreen from "../../components/AddCardScreen";
-import AddExpenseScreen from "../../components/AddExpenseScreen";
-import CreateBudgetScreen from "../../components/CreateBudgetScreen";
-import FamilyFinance from "../../components/FamilyFinance";
-import SubscriptionManager from "../../components/SubscriptionManager";
-import FraudAlerts from "../../components/FraudAlerts";
-import CategoryTransactions from "../../components/CategoryTransactions";
-import BottomNav from "../../components/shared/BottomNav";
+import OnboardingScreen from "../../components/OnboardingScreens";
+import HomeScreen from "../../components/HomeDashboard";
+import ForecastScreen from "./screens/ForecastScreen";
+import CardsScreen from "./screens/CardsScreen";
+import BudgetScreen from "./screens/BudgetScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import AddCardScreen from "./screens/AddCardScreen";
+import AddExpenseScreen from "./screens/AddExpenseScreen";
+import CreateBudgetScreen from "./screens/CreateBudgetScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import SecuritySettingsScreen from "./screens/SecuritySettingsScreen";
+import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
+import HelpCenterScreen from "./screens/HelpCenterScreen";
+import ContactSupportScreen from "./screens/ContactSupportScreen";
+import FamilyFinanceScreen from "./screens/FamilyFinanceScreen";
+import SubscriptionsScreen from "./screens/SubscriptionsScreen";
+import FraudAlertsScreen from "./screens/FraudAlertsScreen";
 
-export default function App() {
-	const [currentScreen, setCurrentScreen] = useState("login");
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// Theme colors
+const lightColors = {
+	primary: "#0d9488",
+	background: "#f8fafc",
+	card: "#ffffff",
+	text: "#1e293b",
+	textSecondary: "#64748b",
+	border: "#e2e8f0",
+};
+
+const darkColors = {
+	primary: "#14b8a6",
+	background: "#0f172a",
+	card: "#1e293b",
+	text: "#f1f5f9",
+	textSecondary: "#94a3b8",
+	border: "#334155",
+};
+
+function MainTabs() {
+	const scheme = useColorScheme();
+	const colors = scheme === "dark" ? darkColors : lightColors;
+
+	return (
+		<Tab.Navigator
+			screenOptions={({ route }) => ({
+				headerShown: false,
+				tabBarIcon: ({ focused, color, size }) => {
+					let iconName: any;
+
+					if (route.name === "Home") {
+						iconName = focused ? "home" : "home-outline";
+					} else if (route.name === "Forecast") {
+						iconName = focused ? "trending-up" : "trending-up-outline";
+					} else if (route.name === "Cards") {
+						iconName = focused ? "card" : "card-outline";
+					} else if (route.name === "Budget") {
+						iconName = focused ? "wallet" : "wallet-outline";
+					} else if (route.name === "Settings") {
+						iconName = focused ? "settings" : "settings-outline";
+					}
+
+					return <Ionicons name={iconName} size={size} color={color} />;
+				},
+				tabBarActiveTintColor: colors.primary,
+				tabBarInactiveTintColor: colors.textSecondary,
+				tabBarStyle: {
+					backgroundColor: colors.card,
+					borderTopColor: colors.border,
+					paddingBottom: 8,
+					paddingTop: 8,
+					height: 60,
+				},
+				tabBarLabelStyle: {
+					fontSize: 12,
+				},
+			})}
+		>
+			<Tab.Screen name="Home" component={HomeScreen} />
+			<Tab.Screen name="Forecast" component={ForecastScreen} />
+			<Tab.Screen name="Cards" component={CardsScreen} />
+			<Tab.Screen name="Budget" component={BudgetScreen} />
+			<Tab.Screen name="Settings" component={SettingsScreen} />
+		</Tab.Navigator>
+	);
+}
+
+function AppNavigator() {
 	const [isAuthenticated, setIsAuthenticated] = useState(false);
 	const [onboardingComplete, setOnboardingComplete] = useState(false);
-	const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const scheme = useColorScheme();
+	const colors = scheme === "dark" ? darkColors : lightColors;
 
-	const handleLogin = () => {
-		setIsAuthenticated(true);
-		if (!onboardingComplete) {
-			setCurrentScreen("onboarding");
-		} else {
-			setCurrentScreen("home");
+	useEffect(() => {
+		checkAuthStatus();
+	}, []);
+
+	const checkAuthStatus = async () => {
+		try {
+			const auth = await AsyncStorage.getItem("isAuthenticated");
+			const onboarding = await AsyncStorage.getItem("onboardingComplete");
+			setIsAuthenticated(auth === "true");
+			setOnboardingComplete(onboarding === "true");
+		} catch (error) {
+			console.error("Error checking auth status:", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
-	const handleRegister = () => {
-		setIsAuthenticated(true);
-		setCurrentScreen("onboarding");
-	};
-
-	const handleOnboardingComplete = () => {
-		setOnboardingComplete(true);
-		setCurrentScreen("home");
-	};
-
-	const handleCategorySelect = (category: string) => {
-		setSelectedCategory(category);
-		setCurrentScreen("categoryTransactions");
-	};
-
-	const navigateTo = (screen: string) => {
-		setCurrentScreen(screen);
-	};
-
-	// Not authenticated - show auth screens
-	if (!isAuthenticated) {
-		return (
-			<div className="min-h-screen bg-gradient-to-br from-teal-600 via-blue-600 to-purple-600">
-				{currentScreen === "login" && (
-					<LoginScreen
-						onLogin={handleLogin}
-						onNavigateToRegister={() => setCurrentScreen("register")}
-					/>
-				)}
-				{currentScreen === "register" && (
-					<RegisterScreen
-						onRegister={handleRegister}
-						onLogin={() => setCurrentScreen("login")}
-					/>
-				)}
-			</div>
-		);
+	if (isLoading) {
+		return <View style={{ flex: 1, backgroundColor: colors.background }} />;
 	}
 
-	// Authenticated but onboarding not complete
-	if (!onboardingComplete && currentScreen === "onboarding") {
-		return <OnboardingScreens onComplete={handleOnboardingComplete} />;
-	}
-
-	// Main app screens
 	return (
-		<div className="min-h-screen bg-slate-50 dark:bg-slate-900 pb-20">
-			{/* Main Content */}
-			<div className="max-w-md mx-auto min-h-screen bg-white dark:bg-slate-900">
-				{currentScreen === "home" && <HomeDashboard onNavigate={navigateTo} />}
-				{currentScreen === "forecast" && <ForecastScreen />}
-				{currentScreen === "cards" && (
-					<CreditCardOptimizer onNavigate={navigateTo} />
-				)}
-				{currentScreen === "budget" && (
-					<BudgetManager onNavigate={navigateTo} />
-				)}
-				{currentScreen === "settings" && (
-					<SettingsScreen onNavigate={navigateTo} />
-				)}
-
-				{/* Modal Screens */}
-				{currentScreen === "addCard" && (
-					<AddCardScreen onClose={() => setCurrentScreen("cards")} />
-				)}
-				{currentScreen === "addExpense" && (
-					<AddExpenseScreen onClose={() => setCurrentScreen("home")} />
-				)}
-				{currentScreen === "createBudget" && (
-					<CreateBudgetScreen onClose={() => setCurrentScreen("budget")} />
-				)}
-				{currentScreen === "familyFinance" && (
-					<FamilyFinance onBack={() => setCurrentScreen("home")} />
-				)}
-				{currentScreen === "subscriptions" && (
-					<SubscriptionManager onBack={() => setCurrentScreen("home")} />
-				)}
-				{currentScreen === "fraudAlerts" && (
-					<FraudAlerts onBack={() => setCurrentScreen("home")} />
-				)}
-				{currentScreen === "categoryTransactions" && selectedCategory && (
-					<CategoryTransactions
-						category={selectedCategory}
-						onBack={() => setCurrentScreen("forecast")}
+		<Stack.Navigator
+			screenOptions={{
+				headerStyle: { backgroundColor: colors.background },
+				headerTintColor: colors.text,
+				headerShadowVisible: false,
+			}}
+		>
+			{!isAuthenticated ? (
+				<>
+					<Stack.Screen
+						name="Login"
+						component={LoginScreen}
+						options={{ headerShown: false }}
 					/>
-				)}
-			</div>
-
-			{/* Bottom Navigation */}
-			{["home", "forecast", "cards", "budget", "settings"].includes(
-				currentScreen
-			) && (
-				<BottomNav
-					currentScreen={currentScreen}
-					onNavigate={setCurrentScreen}
+					<Stack.Screen
+						name="Register"
+						component={RegisterScreen}
+						options={{ headerShown: false }}
+					/>
+				</>
+			) : !onboardingComplete ? (
+				<Stack.Screen
+					name="Onboarding"
+					component={OnboardingScreen}
+					options={{ headerShown: false }}
 				/>
+			) : (
+				<>
+					<Stack.Screen
+						name="MainTabs"
+						component={MainTabs}
+						options={{ headerShown: false }}
+					/>
+					<Stack.Screen
+						name="AddCard"
+						component={AddCardScreen}
+						options={{ title: "Add Credit Card" }}
+					/>
+					<Stack.Screen
+						name="AddExpense"
+						component={AddExpenseScreen}
+						options={{ title: "Add Expense" }}
+					/>
+					<Stack.Screen
+						name="CreateBudget"
+						component={CreateBudgetScreen}
+						options={{ title: "Create Budget" }}
+					/>
+					<Stack.Screen
+						name="Profile"
+						component={ProfileScreen}
+						options={{ title: "Profile" }}
+					/>
+					<Stack.Screen
+						name="SecuritySettings"
+						component={SecuritySettingsScreen}
+						options={{ title: "Security" }}
+					/>
+					<Stack.Screen
+						name="PrivacyPolicy"
+						component={PrivacyPolicyScreen}
+						options={{ title: "Privacy Policy" }}
+					/>
+					<Stack.Screen
+						name="HelpCenter"
+						component={HelpCenterScreen}
+						options={{ title: "Help Center" }}
+					/>
+					<Stack.Screen
+						name="ContactSupport"
+						component={ContactSupportScreen}
+						options={{ title: "Contact Support" }}
+					/>
+					<Stack.Screen
+						name="FamilyFinance"
+						component={FamilyFinanceScreen}
+						options={{ title: "Family Finance" }}
+					/>
+					<Stack.Screen
+						name="Subscriptions"
+						component={SubscriptionsScreen}
+						options={{ title: "Subscriptions" }}
+					/>
+					<Stack.Screen
+						name="FraudAlerts"
+						component={FraudAlertsScreen}
+						options={{ title: "Fraud Alerts" }}
+					/>
+				</>
 			)}
-		</div>
+		</Stack.Navigator>
 	);
 }
+
+export default function App() {
+	return (
+		<NavigationContainer>
+			<AppNavigator />
+			<StatusBar style="auto" />
+		</NavigationContainer>
+	);
+}
+
+*/}
+

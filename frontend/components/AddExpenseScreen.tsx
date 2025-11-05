@@ -1,212 +1,294 @@
-import { useState } from 'react';
-import FinAICard from './shared/FinAICard';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { ArrowLeft, Wallet, Calendar as CalendarIcon } from 'lucide-react';
+import React, { useState } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
-import { Calendar } from './ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+	View,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	ScrollView,
+	StyleSheet,
+} from "react-native";
+import {
+	ArrowLeft,
+	Wallet,
+	Calendar as CalendarIcon,
+} from "lucide-react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface AddExpenseScreenProps {
-  onBack?: () => void;
-  onSuccess?: () => void;
-  onClose?: () => void;
+	onBack?: () => void;
+	onSuccess?: () => void;
+	onClose?: () => void;
 }
 
-export default function AddExpenseScreen({ onBack, onSuccess, onClose }: AddExpenseScreenProps) {
-  const [formData, setFormData] = useState({
-    amount: '',
-    category: '',
-    description: '',
-    date: new Date(),
-    paymentMethod: 'cash',
-  });
+export default function AddExpenseScreen({
+	onBack,
+	onSuccess,
+}: AddExpenseScreenProps) {
+	const [formData, setFormData] = useState({
+		amount: "",
+		category: "",
+		description: "",
+		date: new Date(),
+		paymentMethod: "cash",
+	});
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+	const [showDatePicker, setShowDatePicker] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const categories = [
-    'Groceries',
-    'Transportation',
-    'Bills & Utilities',
-    'Dining Out',
-    'Healthcare',
-    'Shopping',
-    'Entertainment',
-    'Other',
-  ];
+	const categories = [
+		"Groceries",
+		"Transportation",
+		"Bills & Utilities",
+		"Dining Out",
+		"Healthcare",
+		"Shopping",
+		"Entertainment",
+		"Other",
+	];
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onSuccess && onSuccess();
-    }, 1000);
-  };
+	const handleSubmit = () => {
+		setIsSubmitting(true);
+		setTimeout(() => {
+			setIsSubmitting(false);
+			onSuccess && onSuccess();
+		}, 1000);
+	};
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-  };
+	return (
+		<ScrollView style={styles.container}>
+			{/* Header */}
+			<View style={styles.header}>
+				<TouchableOpacity onPress={onBack} style={styles.backButton}>
+					<ArrowLeft color="#555" size={22} />
+				</TouchableOpacity>
+				<View style={{ flex: 1 }}>
+					<Text style={styles.headerTitle}>Add Expense</Text>
+					<Text style={styles.headerSubtitle}>
+						Track your cash and other expenses
+					</Text>
+				</View>
+			</View>
 
-  return (
-    <div className="min-h-screen p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="dark:text-slate-300"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-slate-800 dark:text-slate-100">Add Expense</h1>
-          <p className="text-slate-600 dark:text-slate-400">Track your cash and other expenses</p>
-        </div>
-      </div>
+			{/* Amount Card */}
+			<View style={styles.amountCard}>
+				<Wallet
+					color="rgba(255,255,255,0.7)"
+					size={42}
+					style={styles.amountIcon}
+				/>
+				<Text style={styles.amountLabel}>Amount</Text>
+				<Text style={styles.amountValue}>${formData.amount || "0.00"}</Text>
+			</View>
 
-      {/* Amount Card */}
-      <FinAICard className="bg-gradient-to-br from-teal-500 to-blue-600 text-white">
-        <div className="text-center space-y-2">
-          <Wallet className="w-12 h-12 mx-auto text-white/60" />
-          <p className="text-white/80">Amount</p>
-          <p className="text-5xl">
-            ${formData.amount || '0.00'}
-          </p>
-        </div>
-      </FinAICard>
+			{/* Form */}
+			<View style={styles.card}>
+				<Text style={styles.label}>Amount</Text>
+				<View style={styles.amountInputRow}>
+					<Text style={styles.dollarSign}>$</Text>
+					<TextInput
+						style={styles.input}
+						keyboardType="numeric"
+						placeholder="0.00"
+						value={formData.amount}
+						onChangeText={(text) => setFormData({ ...formData, amount: text })}
+					/>
+				</View>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <FinAICard className="bg-white dark:bg-slate-800">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="dark:text-slate-200">Amount</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-600 dark:text-slate-400 text-xl">$</span>
-                <Input
-                  id="amount"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 text-xl"
-                  required
-                />
-              </div>
-            </div>
+				<Text style={styles.label}>Category</Text>
+				<TextInput
+					style={styles.input}
+					placeholder="Enter category"
+					value={formData.category}
+					onChangeText={(text) => setFormData({ ...formData, category: text })}
+				/>
 
-            <div className="space-y-2">
-              <Label htmlFor="category" className="dark:text-slate-200">Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
-                required
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100">
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-700 dark:border-slate-600">
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category.toLowerCase().replace(/\s/g, '-')}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+				<Text style={styles.label}>Payment Method</Text>
+				<TextInput
+					style={styles.input}
+					placeholder="Cash / Credit / Debit"
+					value={formData.paymentMethod}
+					onChangeText={(text) =>
+						setFormData({ ...formData, paymentMethod: text })
+					}
+				/>
 
-            <div className="space-y-2">
-              <Label htmlFor="paymentMethod" className="dark:text-slate-200">Payment Method</Label>
-              <Select
-                value={formData.paymentMethod}
-                onValueChange={(value) => setFormData({ ...formData, paymentMethod: value })}
-                required
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-700 dark:border-slate-600">
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="debit">Debit Card</SelectItem>
-                  <SelectItem value="credit">Credit Card</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+				<Text style={styles.label}>Date</Text>
+				<TouchableOpacity
+					style={styles.dateButton}
+					onPress={() => setShowDatePicker(true)}
+				>
+					<CalendarIcon color="#0f766e" size={18} />
+					<Text style={styles.dateText}>
+						{formData.date.toLocaleDateString()}
+					</Text>
+				</TouchableOpacity>
 
-            <div className="space-y-2">
-              <Label className="dark:text-slate-200">Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start text-left dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formatDate(formData.date)}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 dark:bg-slate-700 dark:border-slate-600">
-                  <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date) => date && setFormData({ ...formData, date })}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+				{showDatePicker && (
+					<DateTimePicker
+						value={formData.date}
+						mode="date"
+						display="default"
+						onChange={(event, selectedDate) => {
+							setShowDatePicker(false);
+							if (selectedDate) {
+								setFormData({ ...formData, date: selectedDate });
+							}
+						}}
+					/>
+				)}
 
-            <div className="space-y-2">
-              <Label htmlFor="description" className="dark:text-slate-200">Description (Optional)</Label>
-              <Textarea
-                id="description"
-                placeholder="Add a note about this expense..."
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100 resize-none"
-                rows={3}
-              />
-            </div>
-          </div>
-        </FinAICard>
+				<Text style={styles.label}>Description (Optional)</Text>
+				<TextInput
+					style={[styles.input, styles.textArea]}
+					multiline
+					numberOfLines={3}
+					placeholder="Add a note about this expense..."
+					value={formData.description}
+					onChangeText={(text) =>
+						setFormData({ ...formData, description: text })
+					}
+				/>
+			</View>
 
-        {/* Submit Buttons */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12 dark:border-slate-600 dark:text-slate-300"
-            onClick={onBack}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            className="h-12 bg-teal-600 hover:bg-teal-700"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Adding...' : 'Add Expense'}
-          </Button>
-        </div>
-      </form>
-    </div>
-  );
+			{/* Buttons */}
+			<View style={styles.buttonRow}>
+				<TouchableOpacity
+					style={[styles.button, styles.cancelButton]}
+					onPress={onBack}
+				>
+					<Text style={styles.cancelText}>Cancel</Text>
+				</TouchableOpacity>
+
+				<TouchableOpacity
+					style={[styles.button, styles.submitButton]}
+					onPress={handleSubmit}
+					disabled={isSubmitting}
+				>
+					<Text style={styles.submitText}>
+						{isSubmitting ? "Adding..." : "Add Expense"}
+					</Text>
+				</TouchableOpacity>
+			</View>
+		</ScrollView>
+	);
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		padding: 20,
+		backgroundColor: "#f9fafb",
+	},
+	header: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 20,
+	},
+	backButton: {
+		marginRight: 10,
+	},
+	headerTitle: {
+		fontSize: 20,
+		fontWeight: "600",
+		color: "#111827",
+	},
+	headerSubtitle: {
+		fontSize: 14,
+		color: "#6b7280",
+	},
+	amountCard: {
+		backgroundColor: "#0f766e",
+		borderRadius: 12,
+		paddingVertical: 30,
+		alignItems: "center",
+		marginBottom: 20,
+	},
+	amountIcon: { marginBottom: 10 },
+	amountLabel: {
+		color: "rgba(255,255,255,0.8)",
+		fontSize: 14,
+	},
+	amountValue: {
+		color: "#fff",
+		fontSize: 40,
+		fontWeight: "bold",
+	},
+	card: {
+		backgroundColor: "#fff",
+		borderRadius: 12,
+		padding: 16,
+		marginBottom: 20,
+		elevation: 2,
+	},
+	label: {
+		fontSize: 14,
+		fontWeight: "500",
+		color: "#374151",
+		marginBottom: 6,
+	},
+	amountInputRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		marginBottom: 12,
+	},
+	dollarSign: {
+		fontSize: 18,
+		color: "#6b7280",
+		marginRight: 4,
+	},
+	input: {
+		borderWidth: 1,
+		borderColor: "#d1d5db",
+		borderRadius: 8,
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		fontSize: 16,
+		color: "#111827",
+		marginBottom: 12,
+	},
+	textArea: {
+		height: 80,
+		textAlignVertical: "top",
+	},
+	dateButton: {
+		flexDirection: "row",
+		alignItems: "center",
+		borderWidth: 1,
+		borderColor: "#d1d5db",
+		borderRadius: 8,
+		padding: 10,
+		marginBottom: 12,
+	},
+	dateText: {
+		marginLeft: 8,
+		fontSize: 16,
+		color: "#374151",
+	},
+	buttonRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+	},
+	button: {
+		flex: 1,
+		paddingVertical: 14,
+		borderRadius: 8,
+		alignItems: "center",
+		marginHorizontal: 4,
+	},
+	cancelButton: {
+		backgroundColor: "#f3f4f6",
+	},
+	submitButton: {
+		backgroundColor: "#0f766e",
+	},
+	cancelText: {
+		color: "#374151",
+		fontSize: 16,
+		fontWeight: "500",
+	},
+	submitText: {
+		color: "#fff",
+		fontSize: 16,
+		fontWeight: "600",
+	},
+});

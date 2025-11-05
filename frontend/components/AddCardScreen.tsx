@@ -1,419 +1,311 @@
-import { useState } from 'react';
-import FinAICard from './shared/FinAICard';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { CreditCard, ArrowLeft, Check, User, Users, Phone } from 'lucide-react';
+import React, { useState } from "react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
+	View,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	ScrollView,
+	StyleSheet,
+	Alert,
+} from "react-native";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from './ui/alert-dialog';
+	CreditCard,
+	ArrowLeft,
+	Check,
+	User,
+	Users,
+	Phone,
+} from "lucide-react-native";
 
 interface AddCardScreenProps {
-  onBack?: () => void;
-  onSuccess?: () => void;
-  onClose?: () => void;
+	onBack?: () => void;
+	onSuccess?: () => void;
+	onClose?: () => void;
 }
 
-// Card BIN database for auto-detection
 const cardBinDatabase: Record<string, { name: string; type: string }> = {
-  '4': { name: 'Visa', type: 'visa' },
-  '51': { name: 'Mastercard', type: 'mastercard' },
-  '52': { name: 'Mastercard', type: 'mastercard' },
-  '53': { name: 'Mastercard', type: 'mastercard' },
-  '54': { name: 'Mastercard', type: 'mastercard' },
-  '55': { name: 'Mastercard', type: 'mastercard' },
-  '34': { name: 'American Express', type: 'amex' },
-  '37': { name: 'American Express', type: 'amex' },
-  '6011': { name: 'Discover', type: 'discover' },
-  '65': { name: 'Discover', type: 'discover' },
+	"4": { name: "Visa", type: "visa" },
+	"51": { name: "Mastercard", type: "mastercard" },
+	"52": { name: "Mastercard", type: "mastercard" },
+	"53": { name: "Mastercard", type: "mastercard" },
+	"54": { name: "Mastercard", type: "mastercard" },
+	"55": { name: "Mastercard", type: "mastercard" },
+	"34": { name: "Amex", type: "amex" },
+	"37": { name: "Amex", type: "amex" },
+	"6011": { name: "Discover", type: "discover" },
+	"65": { name: "Discover", type: "discover" },
 };
 
-export default function AddCardScreen({ onBack, onSuccess, onClose }: AddCardScreenProps) {
-  const [formData, setFormData] = useState({
-    cardName: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardType: '',
-    cardHolder: 'self',
-    holderName: '',
-    phoneNumber: '',
-  });
+export default function AddCardScreen({
+	onBack,
+	onSuccess,
+	onClose,
+}: AddCardScreenProps) {
+	const [formData, setFormData] = useState({
+		cardName: "",
+		cardNumber: "",
+		expiryDate: "",
+		cvv: "",
+		cardType: "",
+		cardHolder: "self",
+		holderName: "",
+		phoneNumber: "",
+	});
+	const [detectedCardInfo, setDetectedCardInfo] = useState<{
+		name: string;
+		type: string;
+	} | null>(null);
+	const [otpVisible, setOtpVisible] = useState(false);
+	const [otpCode, setOtpCode] = useState("");
+	const [loading, setLoading] = useState(false);
 
-  const [detectedCardInfo, setDetectedCardInfo] = useState<{ name: string; type: string } | null>(null);
-  const [showOtpDialog, setShowOtpDialog] = useState(false);
-  const [otpCode, setOtpCode] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+	const detectCardType = (num: string) => {
+		const cleaned = num.replace(/\s/g, "");
+		for (let i = 6; i >= 1; i--) {
+			const bin = cleaned.substring(0, i);
+			if (cardBinDatabase[bin]) return cardBinDatabase[bin];
+		}
+		return null;
+	};
 
-  const detectCardType = (cardNumber: string) => {
-    const cleaned = cardNumber.replace(/\s/g, '');
-    
-    // Check different BIN lengths
-    for (let i = 6; i >= 1; i--) {
-      const bin = cleaned.substring(0, i);
-      if (cardBinDatabase[bin]) {
-        return cardBinDatabase[bin];
-      }
-    }
-    
-    return null;
-  };
+	const handleCardNumberChange = (val: string) => {
+		const cleaned = val.replace(/\s/g, "");
+		const chunks = cleaned.match(/.{1,4}/g) || [];
+		const formatted = chunks.join(" ").substr(0, 19);
+		setFormData({ ...formData, cardNumber: formatted });
 
-  const handleCardNumberChange = (value: string) => {
-    const cleaned = value.replace(/\s/g, '');
-    const chunks = cleaned.match(/.{1,4}/g) || [];
-    const formatted = chunks.join(' ').substr(0, 19);
-    
-    setFormData({ ...formData, cardNumber: formatted });
+		const detected = detectCardType(cleaned);
+		if (detected) {
+			setDetectedCardInfo(detected);
+			setFormData((prev) => ({
+				...prev,
+				cardType: detected.type,
+				cardName: prev.cardName || detected.name,
+			}));
+		}
+	};
 
-    // Auto-detect card type
-    const detected = detectCardType(cleaned);
-    if (detected) {
-      setDetectedCardInfo(detected);
-      setFormData(prev => ({ 
-        ...prev, 
-        cardNumber: formatted,
-        cardType: detected.type,
-        cardName: prev.cardName || detected.name 
-      }));
-    }
-  };
+	const handleSubmit = () => {
+		if (!formData.cardNumber || !formData.expiryDate || !formData.cvv) {
+			Alert.alert("Missing Fields", "Please fill out all required fields.");
+			return;
+		}
+		setLoading(true);
+		setTimeout(() => {
+			setLoading(false);
+			setOtpVisible(true);
+			Alert.alert("OTP Sent", "Verification code sent to your phone.");
+		}, 1000);
+	};
 
-  const formatExpiryDate = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length >= 2) {
-      return cleaned.substr(0, 2) + '/' + cleaned.substr(2, 2);
-    }
-    return cleaned;
-  };
+	const handleVerifyOtp = () => {
+		if (otpCode.length !== 6) {
+			Alert.alert("Invalid Code", "Enter the 6-digit verification code.");
+			return;
+		}
+		setLoading(true);
+		setTimeout(() => {
+			setLoading(false);
+			setOtpVisible(false);
+			onSuccess && onSuccess();
+			Alert.alert("Card Added", "Your card has been successfully linked!");
+			onClose && onClose();
+		}, 1500);
+	};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate sending OTP
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setOtpSent(true);
-      setShowOtpDialog(true);
-    }, 1000);
-  };
+	return (
+		<ScrollView
+			style={styles.container}
+			contentContainerStyle={{ padding: 20 }}
+		>
+			{/* Header */}
+			<View style={styles.header}>
+				<TouchableOpacity onPress={onBack}>
+					<ArrowLeft color="#333" size={22} />
+				</TouchableOpacity>
+				<Text style={styles.headerTitle}>Add Credit Card</Text>
+			</View>
 
-  const handleVerifyOtp = () => {
-    setIsVerifying(true);
-    
-    // Simulate OTP verification
-    setTimeout(() => {
-      setIsVerifying(false);
-      setShowOtpDialog(false);
-      onSuccess && onSuccess();
-      onClose && onClose();
-    }, 1500);
-  };
+			{/* Card Preview */}
+			<View style={styles.cardPreview}>
+				<View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+					<Text style={styles.cardNetwork}>
+						{detectedCardInfo?.name || "Card Network"}
+					</Text>
+					<CreditCard color="#fff" size={28} />
+				</View>
 
-  const handleResendOtp = () => {
-    // Simulate resending OTP
-    setOtpSent(false);
-    setTimeout(() => {
-      setOtpSent(true);
-    }, 1000);
-  };
+				<Text style={styles.cardNumber}>
+					{formData.cardNumber || "•••• •••• •••• ••••"}
+				</Text>
 
-  return (
-    <div className="min-h-screen p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onBack}
-          className="dark:text-slate-300"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-slate-800 dark:text-slate-100">Add Credit Card</h1>
-          <p className="text-slate-600 dark:text-slate-400">Link a new card to your account</p>
-        </div>
-      </div>
+				<View style={styles.cardFooter}>
+					<Text style={styles.cardDetails}>
+						{formData.expiryDate || "MM/YY"} {"   "} CVV:{" "}
+						{formData.cvv ? "•••" : "•••"}
+					</Text>
+				</View>
+			</View>
 
-      {/* Card Holder Selection */}
-      <FinAICard className="bg-white dark:bg-slate-800">
-        <div className="space-y-3">
-          <Label className="dark:text-slate-200">Card Belongs To</Label>
-          <Select
-            value={formData.cardHolder}
-            onValueChange={(value) => setFormData({ ...formData, cardHolder: value })}
-          >
-            <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="dark:bg-slate-700 dark:border-slate-600">
-              <SelectItem value="self">
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  <span>Self</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="spouse">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>Spouse</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="child">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>Child</span>
-                </div>
-              </SelectItem>
-              <SelectItem value="other">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>Other Family Member</span>
-                </div>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+			{/* Card Form */}
+			<View style={styles.formGroup}>
+				<Text style={styles.label}>Card Number</Text>
+				<TextInput
+					style={styles.input}
+					placeholder="1234 5678 9012 3456"
+					keyboardType="numeric"
+					value={formData.cardNumber}
+					onChangeText={handleCardNumberChange}
+				/>
+				{detectedCardInfo && (
+					<Text style={styles.detectedText}>
+						✓ {detectedCardInfo.name} detected
+					</Text>
+				)}
+			</View>
 
-          {formData.cardHolder !== 'self' && (
-            <div className="space-y-2 pt-2">
-              <Label htmlFor="holderName" className="dark:text-slate-200">Cardholder Name</Label>
-              <Input
-                id="holderName"
-                placeholder="Enter cardholder's name"
-                value={formData.holderName}
-                onChange={(e) => setFormData({ ...formData, holderName: e.target.value })}
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                required
-              />
-            </div>
-          )}
-        </div>
-      </FinAICard>
+			<View style={styles.row}>
+				<View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
+					<Text style={styles.label}>Expiry Date</Text>
+					<TextInput
+						style={styles.input}
+						placeholder="MM/YY"
+						value={formData.expiryDate}
+						onChangeText={(v) =>
+							setFormData({
+								...formData,
+								expiryDate: v
+									.replace(/\D/g, "")
+									.replace(/(\d{2})(\d{0,2})/, "$1/$2"),
+							})
+						}
+						keyboardType="numeric"
+						maxLength={5}
+					/>
+				</View>
+				<View style={[styles.formGroup, { flex: 1, marginLeft: 8 }]}>
+					<Text style={styles.label}>CVV</Text>
+					<TextInput
+						style={styles.input}
+						placeholder="123"
+						secureTextEntry
+						value={formData.cvv}
+						onChangeText={(v) =>
+							setFormData({
+								...formData,
+								cvv: v.replace(/\D/g, "").substr(0, 4),
+							})
+						}
+						keyboardType="numeric"
+						maxLength={4}
+					/>
+				</View>
+			</View>
 
-      {/* Card Preview */}
-      <FinAICard className="bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900 text-white">
-        <div className="space-y-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-white/70 text-sm">
-                {formData.cardName || (detectedCardInfo?.name) || 'Card Network'}
-              </p>
-              <p className="text-xl">
-                {formData.cardHolder === 'self' ? 'Alex Morgan' : formData.holderName || 'Cardholder Name'}
-              </p>
-            </div>
-            <CreditCard className="w-10 h-10 text-white/60" />
-          </div>
-          
-          <div className="space-y-1">
-            <p className="text-white/70 text-sm">Card Number</p>
-            <p className="text-2xl tracking-wider">
-              {formData.cardNumber || '•••• •••• •••• ••••'}
-            </p>
-          </div>
+			<View style={styles.formGroup}>
+				<Text style={styles.label}>Phone Number</Text>
+				<View style={{ flexDirection: "row", alignItems: "center" }}>
+					<Phone color="#888" size={18} style={{ marginRight: 6 }} />
+					<TextInput
+						style={[styles.input, { flex: 1 }]}
+						placeholder="+1 (555) 123-4567"
+						keyboardType="phone-pad"
+						value={formData.phoneNumber}
+						onChangeText={(v) => setFormData({ ...formData, phoneNumber: v })}
+					/>
+				</View>
+			</View>
 
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <p className="text-white/70 text-sm">Expires</p>
-              <p>{formData.expiryDate || 'MM/YY'}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-white/70 text-sm">CVV</p>
-              <p>{'•'.repeat(formData.cvv.length) || '•••'}</p>
-            </div>
-            {detectedCardInfo && (
-              <div className="bg-white/20 px-3 py-1 rounded-full">
-                <p className="text-sm">{detectedCardInfo.name}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </FinAICard>
+			{/* Submit */}
+			<TouchableOpacity
+				style={[styles.submitButton, loading && { opacity: 0.6 }]}
+				onPress={handleSubmit}
+				disabled={loading}
+			>
+				<Text style={styles.submitText}>
+					{loading ? "Sending Code..." : "Continue to Verification"}
+				</Text>
+			</TouchableOpacity>
 
-      {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <FinAICard className="bg-white dark:bg-slate-800">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="cardNumber" className="dark:text-slate-200">Card Number</Label>
-              <Input
-                id="cardNumber"
-                placeholder="1234 5678 9012 3456"
-                value={formData.cardNumber}
-                onChange={(e) => handleCardNumberChange(e.target.value)}
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                maxLength={19}
-                required
-              />
-              {detectedCardInfo && (
-                <p className="text-sm text-teal-600 dark:text-teal-400">
-                  ✓ {detectedCardInfo.name} card detected
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cardName" className="dark:text-slate-200">Card Name (Optional)</Label>
-              <Input
-                id="cardName"
-                placeholder={detectedCardInfo?.name || "e.g. Chase Sapphire"}
-                value={formData.cardName}
-                onChange={(e) => setFormData({ ...formData, cardName: e.target.value })}
-                className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-              />
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Auto-detected from card number
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="expiryDate" className="dark:text-slate-200">Expiry Date</Label>
-                <Input
-                  id="expiryDate"
-                  placeholder="MM/YY"
-                  value={formData.expiryDate}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    expiryDate: formatExpiryDate(e.target.value) 
-                  })}
-                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  maxLength={5}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cvv" className="dark:text-slate-200">CVV</Label>
-                <Input
-                  id="cvv"
-                  type="password"
-                  placeholder="123"
-                  value={formData.cvv}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    cvv: e.target.value.replace(/\D/g, '').substr(0, 4) 
-                  })}
-                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  maxLength={4}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumber" className="dark:text-slate-200">
-                Phone Number for Verification
-              </Label>
-              <div className="flex items-center gap-2">
-                <Phone className="w-5 h-5 text-slate-400" />
-                <Input
-                  id="phoneNumber"
-                  type="tel"
-                  placeholder="+1 (555) 123-4567"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  className="dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                  required
-                />
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                We will send a verification code to confirm card ownership
-              </p>
-            </div>
-          </div>
-        </FinAICard>
-
-        {/* Security Notice */}
-        <FinAICard className="bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800">
-          <div className="flex items-start gap-3">
-            <div className="bg-blue-500 p-2 rounded-full mt-1">
-              <Check className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="text-slate-900 dark:text-slate-100">Secure Verification Required</p>
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
-                For your security, we will send a verification code to the phone number associated with this card. Your card details are encrypted with bank-level security.
-              </p>
-            </div>
-          </div>
-        </FinAICard>
-
-        {/* Submit Button */}
-        <Button
-          type="submit"
-          className="w-full h-12 bg-teal-600 hover:bg-teal-700"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Sending Verification Code...' : 'Continue to Verification'}
-        </Button>
-      </form>
-
-      {/* OTP Verification Dialog */}
-      <AlertDialog open={showOtpDialog} onOpenChange={setShowOtpDialog}>
-        <AlertDialogContent className="dark:bg-slate-800 dark:border-slate-700">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="dark:text-slate-100">Verify Your Card</AlertDialogTitle>
-            <AlertDialogDescription className="dark:text-slate-400">
-              We have sent a 6-digit verification code to {formData.phoneNumber}. Please enter it below to confirm card ownership.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="otp" className="dark:text-slate-200">Verification Code</Label>
-              <Input
-                id="otp"
-                type="text"
-                placeholder="000000"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').substr(0, 6))}
-                className="text-center text-2xl tracking-widest dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"
-                maxLength={6}
-              />
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Did not receive the code?{' '}
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  className="text-teal-600 dark:text-teal-400 hover:underline"
-                >
-                  Resend Code
-                </button>
-              </p>
-            </div>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="dark:border-slate-600 dark:text-slate-300">Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleVerifyOtp}
-              disabled={otpCode.length !== 6 || isVerifying}
-              className="bg-teal-600 hover:bg-teal-700"
-            >
-              {isVerifying ? 'Verifying...' : 'Verify & Add Card'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
+			{/* OTP Verification */}
+			{otpVisible && (
+				<View style={styles.otpContainer}>
+					<Text style={styles.otpTitle}>Enter Verification Code</Text>
+					<TextInput
+						style={styles.otpInput}
+						placeholder="000000"
+						keyboardType="numeric"
+						value={otpCode}
+						onChangeText={(v) => setOtpCode(v.replace(/\D/g, "").substr(0, 6))}
+						maxLength={6}
+					/>
+					<TouchableOpacity
+						style={[styles.submitButton, { marginTop: 12 }]}
+						onPress={handleVerifyOtp}
+					>
+						<Text style={styles.submitText}>Verify & Add Card</Text>
+					</TouchableOpacity>
+				</View>
+			)}
+		</ScrollView>
+	);
 }
+
+const styles = StyleSheet.create({
+	container: { backgroundColor: "#f9fafb", flex: 1 },
+	header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
+	headerTitle: {
+		fontSize: 20,
+		fontWeight: "600",
+		marginLeft: 10,
+		color: "#111",
+	},
+	cardPreview: {
+		backgroundColor: "#1e293b",
+		borderRadius: 16,
+		padding: 20,
+		marginBottom: 20,
+	},
+	cardNetwork: { color: "#cbd5e1", fontSize: 14 },
+	cardNumber: {
+		color: "white",
+		fontSize: 22,
+		letterSpacing: 2,
+		marginTop: 20,
+	},
+	cardFooter: { marginTop: 20 },
+	cardDetails: { color: "#cbd5e1", fontSize: 16 },
+	formGroup: { marginBottom: 16 },
+	label: { color: "#374151", marginBottom: 4 },
+	input: {
+		borderWidth: 1,
+		borderColor: "#d1d5db",
+		borderRadius: 8,
+		padding: 10,
+		backgroundColor: "white",
+		fontSize: 16,
+	},
+	detectedText: { color: "#0d9488", fontSize: 14, marginTop: 4 },
+	row: { flexDirection: "row", justifyContent: "space-between" },
+	submitButton: {
+		backgroundColor: "#0d9488",
+		padding: 14,
+		borderRadius: 8,
+		alignItems: "center",
+		marginTop: 10,
+	},
+	submitText: { color: "white", fontWeight: "600", fontSize: 16 },
+	otpContainer: { marginTop: 30, alignItems: "center" },
+	otpTitle: { fontSize: 16, fontWeight: "500", marginBottom: 10 },
+	otpInput: {
+		borderWidth: 1,
+		borderColor: "#d1d5db",
+		borderRadius: 8,
+		padding: 10,
+		width: "50%",
+		textAlign: "center",
+		fontSize: 20,
+		letterSpacing: 4,
+		backgroundColor: "white",
+	},
+});

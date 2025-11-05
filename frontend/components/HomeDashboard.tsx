@@ -1,125 +1,321 @@
-import { Button } from './ui/button';
-import FinAICard from './shared/FinAICard';
-import { Sparkles, TrendingUp, Calendar, CreditCard, Repeat, ChevronRight, MessageCircle, Plus, Wallet } from 'lucide-react';
+import React from "react";
+import {
+	View,
+	Text,
+	TouchableOpacity,
+	ScrollView,
+	StyleSheet,
+} from "react-native";
+import {
+	Sparkles,
+	TrendingUp,
+	Calendar,
+	CreditCard,
+	MessageCircle,
+	Plus,
+	Wallet,
+} from "lucide-react-native";
 
 interface HomeDashboardProps {
-  onNavigate: (screen: any) => void;
+	onNavigate: (screen: string) => void;
 }
 
 export default function HomeDashboard({ onNavigate }: HomeDashboardProps) {
-  return (
-    <div className="min-h-screen p-6 space-y-6">
-      {/* Header */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h1 className="text-slate-800 dark:text-slate-100">Good morning, Alex</h1>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onNavigate('add-expense')}
-            className="dark:border-slate-600 dark:text-slate-300"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Expense
-          </Button>
-        </div>
-        <div className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white p-4 rounded-2xl flex items-center gap-3">
-          <div className="bg-white/20 p-2 rounded-full">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <p>You saved $40 this week!</p>
-        </div>
-      </div>
+	return (
+		<ScrollView
+			style={styles.container}
+			contentContainerStyle={{ paddingBottom: 120 }}
+		>
+			{/* Header */}
+			<View style={styles.header}>
+				<View style={styles.headerRow}>
+					<Text style={styles.headerTitle}>Good morning, Alex</Text>
+					<TouchableOpacity
+						style={[styles.button, styles.buttonOutline]}
+						onPress={() => onNavigate("add-expense")}
+					>
+						<Plus color="#0f766e" size={18} />
+						<Text style={styles.buttonText}>Add Expense</Text>
+					</TouchableOpacity>
+				</View>
 
-      {/* Total Balance Card */}
-      <FinAICard className="bg-gradient-to-br from-slate-800 to-slate-900 text-white">
-        <div className="space-y-2">
-          <p className="text-white/70">Total Balance</p>
-          <h2 className="text-white text-4xl">$12,847.52</h2>
-          <div className="flex items-center gap-2 text-emerald-400">
-            <TrendingUp className="w-4 h-4" />
-            <span>+2.4% this month</span>
-          </div>
-        </div>
-      </FinAICard>
+				<View style={styles.savingsCard}>
+					<View style={styles.iconCircle}>
+						<Sparkles color="#fff" size={18} />
+					</View>
+					<Text style={styles.savingsText}>You saved $40 this week!</Text>
+				</View>
+			</View>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <FinAICard 
-          className="bg-white dark:bg-slate-800 hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() => onNavigate('budget')}
-        >
-          <div className="space-y-2">
-            <div className="bg-teal-100 dark:bg-teal-900/30 w-10 h-10 rounded-xl flex items-center justify-center">
-              <Wallet className="w-5 h-5 text-teal-600 dark:text-teal-400" />
-            </div>
-            <p className="text-slate-600 dark:text-slate-400">Budget Left</p>
-            <p className="text-slate-900 dark:text-slate-100 text-2xl">$1,179</p>
-          </div>
-        </FinAICard>
+			{/* Total Balance */}
+			<View style={[styles.card, styles.balanceCard]}>
+				<Text style={styles.balanceLabel}>Total Balance</Text>
+				<Text style={styles.balanceAmount}>$12,847.52</Text>
+				<View style={styles.trendRow}>
+					<TrendingUp color="#34d399" size={16} />
+					<Text style={styles.trendText}>+2.4% this month</Text>
+				</View>
+			</View>
 
-        <FinAICard 
-          className="bg-white dark:bg-slate-800 hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() => onNavigate('forecast')}
-        >
-          <div className="space-y-2">
-            <div className="bg-blue-100 dark:bg-blue-900/30 w-10 h-10 rounded-xl flex items-center justify-center">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <p className="text-slate-600 dark:text-slate-400">This Month</p>
-            <p className="text-slate-900 dark:text-slate-100 text-2xl">$1,821</p>
-          </div>
-        </FinAICard>
-      </div>
+			{/* Quick Stats */}
+			<View style={styles.row}>
+				<TouchableOpacity
+					style={[styles.card, styles.statCard]}
+					onPress={() => onNavigate("budget")}
+				>
+					<View style={[styles.iconBox, { backgroundColor: "#ccfbf1" }]}>
+						<Wallet color="#0d9488" size={20} />
+					</View>
+					<Text style={styles.cardLabel}>Budget Left</Text>
+					<Text style={styles.cardValue}>$1,179</Text>
+				</TouchableOpacity>
 
-      {/* Credit Card Rewards */}
-      <FinAICard 
-        className="bg-gradient-to-br from-amber-400 to-orange-500 text-white cursor-pointer hover:shadow-lg transition-shadow"
-        onClick={() => onNavigate('cards')}
-      >
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-white/90">Credit Card Rewards</p>
-            <p className="text-2xl">$127</p>
-            <p className="text-white/80">Available to redeem</p>
-          </div>
-          <CreditCard className="w-12 h-12 text-white/80" />
-        </div>
-      </FinAICard>
+				<TouchableOpacity
+					style={[styles.card, styles.statCard]}
+					onPress={() => onNavigate("forecast")}
+				>
+					<View style={[styles.iconBox, { backgroundColor: "#bfdbfe" }]}>
+						<Calendar color="#2563eb" size={20} />
+					</View>
+					<Text style={styles.cardLabel}>This Month</Text>
+					<Text style={styles.cardValue}>$1,821</Text>
+				</TouchableOpacity>
+			</View>
 
-      {/* Recent Insights */}
-      <div className="space-y-3">
-        <h3 className="text-slate-800 dark:text-slate-100">AI Insights</h3>
-        
-        <FinAICard className="bg-white dark:bg-slate-800 border-l-4 border-teal-500">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-slate-900 dark:text-slate-100">Unused Subscription Detected</p>
-              <p className="text-slate-600 dark:text-slate-400">You have not used HBO Max in 60 days</p>
-            </div>
-            <Button size="sm" variant="ghost" className="text-teal-600 dark:text-teal-400">
-              Review
-            </Button>
-          </div>
-        </FinAICard>
+			{/* Credit Card Rewards */}
+			<TouchableOpacity
+				style={[styles.card, styles.rewardsCard]}
+				onPress={() => onNavigate("cards")}
+			>
+				<View style={styles.rewardsRow}>
+					<View>
+						<Text style={styles.rewardsLabel}>Credit Card Rewards</Text>
+						<Text style={styles.rewardsAmount}>$127</Text>
+						<Text style={styles.rewardsSub}>Available to redeem</Text>
+					</View>
+					<CreditCard color="#fff" size={48} />
+				</View>
+			</TouchableOpacity>
 
-        <FinAICard className="bg-white dark:bg-slate-800 border-l-4 border-blue-500">
-          <div className="flex items-start justify-between">
-            <div className="space-y-1">
-              <p className="text-slate-900 dark:text-slate-100">Better Card for Groceries</p>
-              <p className="text-slate-600 dark:text-slate-400">Use Chase Freedom for 5% cashback</p>
-            </div>
-            <Button size="sm" variant="ghost" className="text-blue-600 dark:text-blue-400">
-              View
-            </Button>
-          </div>
-        </FinAICard>
-      </div>
+			{/* AI Insights */}
+			<View style={{ marginTop: 16 }}>
+				<Text style={styles.sectionTitle}>AI Insights</Text>
 
-      {/* Floating AI Assistant Button */}
-      <Button className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-blue-500 hover:from-teal-600 hover:to-blue-600 shadow-lg">
-        <MessageCircle className="w-6 h-6" />
-      </Button>
-    </div>
-  );
+				<View
+					style={[
+						styles.card,
+						styles.insightCard,
+						{ borderLeftColor: "#14b8a6" },
+					]}
+				>
+					<View style={styles.insightRow}>
+						<View>
+							<Text style={styles.insightTitle}>
+								Unused Subscription Detected
+							</Text>
+							<Text style={styles.insightSubtitle}>
+								You have not used HBO Max in 60 days
+							</Text>
+						</View>
+						<TouchableOpacity>
+							<Text style={[styles.actionText, { color: "#14b8a6" }]}>
+								Review
+							</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+
+				<View
+					style={[
+						styles.card,
+						styles.insightCard,
+						{ borderLeftColor: "#3b82f6" },
+					]}
+				>
+					<View style={styles.insightRow}>
+						<View>
+							<Text style={styles.insightTitle}>Better Card for Groceries</Text>
+							<Text style={styles.insightSubtitle}>
+								Use Chase Freedom for 5% cashback
+							</Text>
+						</View>
+						<TouchableOpacity>
+							<Text style={[styles.actionText, { color: "#3b82f6" }]}>
+								View
+							</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+			</View>
+
+			{/* Floating Chat Button */}
+			<TouchableOpacity style={styles.chatButton}>
+				<MessageCircle color="#fff" size={28} />
+			</TouchableOpacity>
+		</ScrollView>
+	);
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: "#f8fafc",
+		padding: 16,
+	},
+	header: {
+		marginBottom: 16,
+	},
+	headerRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+	headerTitle: {
+		fontSize: 20,
+		fontWeight: "600",
+		color: "#1e293b",
+	},
+	button: {
+		flexDirection: "row",
+		alignItems: "center",
+		borderRadius: 8,
+		paddingVertical: 6,
+		paddingHorizontal: 10,
+	},
+	buttonOutline: {
+		borderWidth: 1,
+		borderColor: "#0f766e",
+	},
+	buttonText: {
+		color: "#0f766e",
+		fontWeight: "500",
+		marginLeft: 6,
+	},
+	savingsCard: {
+		backgroundColor: "#0d9488",
+		flexDirection: "row",
+		alignItems: "center",
+		marginTop: 12,
+		borderRadius: 16,
+		padding: 12,
+	},
+	iconCircle: {
+		backgroundColor: "rgba(255,255,255,0.2)",
+		padding: 6,
+		borderRadius: 50,
+		marginRight: 8,
+	},
+	savingsText: {
+		color: "#fff",
+		fontSize: 15,
+	},
+	card: {
+		borderRadius: 16,
+		padding: 16,
+		backgroundColor: "#fff",
+		marginTop: 12,
+	},
+	balanceCard: {
+		backgroundColor: "#1e293b",
+	},
+	balanceLabel: {
+		color: "#cbd5e1",
+	},
+	balanceAmount: {
+		color: "#fff",
+		fontSize: 32,
+		fontWeight: "700",
+		marginVertical: 4,
+	},
+	trendRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: 4,
+	},
+	trendText: {
+		color: "#34d399",
+	},
+	row: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+	},
+	statCard: {
+		flex: 1,
+		marginHorizontal: 4,
+	},
+	iconBox: {
+		width: 40,
+		height: 40,
+		borderRadius: 12,
+		alignItems: "center",
+		justifyContent: "center",
+		marginBottom: 8,
+	},
+	cardLabel: {
+		color: "#475569",
+	},
+	cardValue: {
+		color: "#0f172a",
+		fontSize: 22,
+		fontWeight: "600",
+	},
+	rewardsCard: {
+		backgroundColor: "#f59e0b",
+	},
+	rewardsRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+	},
+	rewardsLabel: {
+		color: "#fff",
+		opacity: 0.9,
+	},
+	rewardsAmount: {
+		color: "#fff",
+		fontSize: 24,
+		fontWeight: "700",
+	},
+	rewardsSub: {
+		color: "#fff",
+		opacity: 0.8,
+	},
+	sectionTitle: {
+		fontSize: 18,
+		fontWeight: "600",
+		marginBottom: 8,
+		color: "#1e293b",
+	},
+	insightCard: {
+		borderLeftWidth: 4,
+		marginBottom: 10,
+	},
+	insightRow: {
+		flexDirection: "row",
+		justifyContent: "space-between",
+	},
+	insightTitle: {
+		fontSize: 16,
+		color: "#0f172a",
+		fontWeight: "600",
+	},
+	insightSubtitle: {
+		color: "#64748b",
+		marginTop: 2,
+	},
+	actionText: {
+		fontWeight: "500",
+	},
+	chatButton: {
+		position: "absolute",
+		bottom: 40,
+		right: 24,
+		width: 56,
+		height: 56,
+		borderRadius: 28,
+		backgroundColor: "#0d9488",
+		justifyContent: "center",
+		alignItems: "center",
+		elevation: 5,
+	},
+});
