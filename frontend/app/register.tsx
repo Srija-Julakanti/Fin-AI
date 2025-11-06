@@ -80,6 +80,7 @@ export default function Register() {
 			});
 
 			const data: any = await res.json().catch(() => ({}));
+			console.log(res);
 			if (res.status !== 200) {
 				const msg =
 					data?.message ||
@@ -100,7 +101,7 @@ export default function Register() {
 
 			// If you kept token?: string, avoid passing null:
 			// register(apiUser, token ?? undefined);
-			register(apiUser, token);
+			await register(apiUser, token ?? null, true /* or your checkbox state */);
 
 			router.replace("/(tabs)");
 		} catch (err: any) {
