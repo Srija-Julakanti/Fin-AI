@@ -1,17 +1,30 @@
+// app/_layout.tsx
 import { Stack } from "expo-router";
-import { AuthProvider } from "../contexts/AuthContext";
+import { ActivityIndicator, View } from "react-native";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+
+function RootInner() {
+	const { ready } = useAuth();
+	if (!ready) {
+		return (
+			<View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+				<ActivityIndicator />
+			</View>
+		);
+	}
+	return (
+		<Stack screenOptions={{ headerShown: false }}>
+			<Stack.Screen name="(tabs)" />
+			<Stack.Screen name="login" />
+			<Stack.Screen name="register" />
+		</Stack>
+	);
+}
 
 export default function RootLayout() {
 	return (
 		<AuthProvider>
-			<Stack screenOptions={{ headerShown: false }}>
-				{/* 👇 Make the tabs group a known route */}
-				<Stack.Screen name="(tabs)" />
-
-				{/* Auth screens */}
-				<Stack.Screen name="login" />
-				<Stack.Screen name="register" />
-			</Stack>
+			<RootInner />
 		</AuthProvider>
 	);
 }

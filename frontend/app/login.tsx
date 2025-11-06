@@ -30,6 +30,7 @@ export default function Login() {
 	const router = useRouter();
 
 	const handleSubmit = async () => {
+		console.log(email, password);
 		if (!email || !password) {
 			Alert.alert("Missing fields", "Please enter email and password.");
 			return;
@@ -37,6 +38,7 @@ export default function Login() {
 
 		setIsLoading(true);
 		try {
+			console.log("before fetch", email, password);
 			const res = await fetch(`${API_BASE}/api/auth/login`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -44,6 +46,7 @@ export default function Login() {
 			});
 
 			const data: any = await res.json().catch(() => ({}));
+			console.log("response:", data);
 
 			if (res.status !== 200) {
 				const msg =
@@ -60,8 +63,7 @@ export default function Login() {
 
 			if (!user) throw new Error("Login response missing user info.");
 
-			// ✅ Store in context
-			login(user, token);
+			await login(user, token ?? null, remember);
 
 			// Navigation happens automatically since _layout checks `user`
 			router.replace("/(tabs)");
