@@ -328,7 +328,7 @@ export default function Budget({ onBack }: { onBack?: () => void }) {
 								pressed && { opacity: 0.9 },
 							]}
 							onPress={() => {
-								/* TODO: adjust */
+								router.push("../adjust-budget")
 							}}
 						>
 							<Text style={styles.primaryBtnText}>Adjust Savings Plan</Text>
