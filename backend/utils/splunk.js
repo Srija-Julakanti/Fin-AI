@@ -1,29 +1,40 @@
-const axios = require('axios');
-const https = require('https');
+// backend/utils/splunk.js
+const axios = require("axios");
+const https = require("https");
 
-const hecUrl = process.env.SPLUNK_HEC_URL;
-const hecToken = process.env.SPLUNK_HEC_TOKEN;
-const index = process.env.SPLUNK_INDEX || 'main';
+const agent = new https.Agent({
+  rejectUnauthorized: false   // allow self-signed SSL from local Splunk
+});
 
-// Simple Splunk logger
-async function logEvent(event, fields = {}) {
-  if (!hecUrl || !hecToken) return;
+const SPLUNK_HEC_URL = process.env.SPLUNK_HEC_URL;
+const SPLUNK_HEC_TOKEN = process.env.SPLUNK_HEC_TOKEN;
+const SPLUNK_INDEX = process.env.SPLUNK_INDEX || "main";
+
+async function logEvent(type, data = {}) {
+  if (!SPLUNK_HEC_URL || !SPLUNK_HEC_TOKEN) {
+    console.warn("Splunk not configured, skipping log");
+    return;
+  }
+
   const payload = {
-    time: Date.now() / 1000,
-    host: 'fin-ai-backend',
-    source: 'fin-ai-backend',
-    sourcetype: '_json',
-    index,
-    event: { event, ...fields }
+    index: SPLUNK_INDEX,
+    sourcetype: "finai:backend",
+    event: {
+      type,
+      ...data,
+    },
   };
+
   try {
-    await axios.post(`${hecUrl}/event`, payload, {
-      headers: { Authorization: `Splunk ${hecToken}` },
-      timeout: 3000,
-      httpsAgent: new https.Agent({ rejectUnauthorized: false })
+    await axios.post(SPLUNK_HEC_URL, payload, {
+      httpsAgent: agent,
+      headers: {
+        Authorization: `Splunk ${SPLUNK_HEC_TOKEN}`,
+        "Content-Type": "application/json",
+      },
     });
-  } catch (e) {
-    console.error('Splunk log failed:', e.message);
+  } catch (err) {
+    console.error("Error sending to Splunk:", err.message);
   }
 }
 
