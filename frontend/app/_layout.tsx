@@ -17,6 +17,9 @@ function RootInner() {
 			<Stack.Screen name="(tabs)" />
 			<Stack.Screen name="login" />
 			<Stack.Screen name="register" />
+			<Stack.Screen name="add-card" options={{ title: "Add Card" }} />
+			<Stack.Screen name="adjust-budget" options={{ title: "Adjust Budget" }} />
+
 		</Stack>
 	);
 }
