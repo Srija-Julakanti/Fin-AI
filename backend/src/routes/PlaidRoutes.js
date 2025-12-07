@@ -10,6 +10,7 @@ router.post("/create_link_token", plaidController.createLinkToken);
 router.post("/get_access_token", plaidController.exchangePublicToken);
 
 // POST /api/plaid/get_transactions
-router.post("/get_transactions", plaidController.getTransactions);
+router.post("/transactions", plaidController.getTransactions);
 
+router.post("/transactions/sync", plaidController.syncTransactions);
 module.exports = router;
