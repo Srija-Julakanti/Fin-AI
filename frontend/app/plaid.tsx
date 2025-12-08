@@ -11,6 +11,8 @@ import {
 } from "react-native";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
+import { useRouter } from 'expo-router';
+import { Feather } from "@expo/vector-icons";
 
 import {
   create,
@@ -20,13 +22,14 @@ import {
   LinkExit,
   LinkLogLevel,
 } from "react-native-plaid-link-sdk";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const API_BASE_URL =
   Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://localhost:8000";
 
 export default function PlaidScreen() {
+  const router = useRouter();
   const { user } = useAuth();
-
   const [linkToken, setLinkToken] = useState<string | null>(null);
   const [plaidItemId, setPlaidItemId] = useState<string | null>(null);
   const [transactions, setTransactions] = useState<string>(
@@ -40,7 +43,17 @@ export default function PlaidScreen() {
   if (!userId) {
     return (
       <View style={styles.container}>
-        <Text style={styles.header}>Plaid Integration</Text>
+        <View style={styles.headerContainer}>
+          <Feather 
+            name="arrow-left" 
+            size={24} 
+            color="#0d9488" 
+            onPress={() => router.back()} // Changed to goBack()
+            style={styles.backButton}
+          />
+          <Text style={styles.header}>Link Bank Account</Text>
+        </View>
+        
         <Text>You must be logged in to link a bank.</Text>
       </View>
     );
@@ -154,7 +167,17 @@ export default function PlaidScreen() {
   };
 
   return (
+    <SafeAreaView edges={["top", "left", "right"]}>
     <View style={styles.container}>
+       <View style={styles.headerContainer}>
+          <Feather 
+            name="arrow-left" 
+            size={24} 
+            color="#0d9488" 
+            onPress={() => router.back()} // Changed to goBack()
+            style={styles.backButton}
+          />
+        </View>
       <Text style={styles.header}>Plaid Integration</Text>
 
       <Button
@@ -187,11 +210,21 @@ export default function PlaidScreen() {
         <Text>{transactions}</Text>
       </ScrollView>
     </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
+  },
   header: {
     fontSize: 24,
     fontWeight: "700",
