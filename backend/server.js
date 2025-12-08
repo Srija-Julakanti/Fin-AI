@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const plaidRoutes = require("./src/routes/plaidRoutes");
+const homeRoutes = require("./src/routes/homeRoutes");
 
 //Enable CORS for all requests (no need for app.options in Express 5)
 const app = express();
@@ -26,6 +27,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/budgets", budgetRoutes);
 app.use("/api/plaid", plaidRoutes);
+app.use("/api/home", homeRoutes);
 const PORT = process.env.PORT || 8000;
 
 //Connect to MongoDB
