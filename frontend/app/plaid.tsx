@@ -10,7 +10,7 @@ import {
   Platform,
 } from "react-native";
 import axios from "axios";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 import {
   create,
