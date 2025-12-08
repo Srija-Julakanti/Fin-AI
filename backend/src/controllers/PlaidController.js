@@ -12,7 +12,7 @@ async function createLinkToken(req, res) {
 		const response = await plaidClient.linkTokenCreate({
 			user: { client_user_id: String(userId) },
 			client_name: "Fin-AI",
-			products: ["transactions", "income_verification"],
+			products: ["transactions"],
 			country_codes: ["US"],
 			language: "en",
 		});
@@ -59,7 +59,12 @@ async function exchangePublicToken(req, res) {
 			access_token: access_token,
 		});
 		const accounts = accountsResp.data.accounts;
-
+		console.log(
+			"Fetched accounts from Plaid:",
+			accounts[0],
+			accounts[1],
+			accounts[2]
+		);
 		const accountDocs = [];
 		for (const acc of accounts) {
 			const doc = await Account.findOneAndUpdate(
@@ -77,6 +82,7 @@ async function exchangePublicToken(req, res) {
 					currentBalance: acc.balances.current,
 					availableBalance: acc.balances.available,
 					isoCurrencyCode: acc.balances.iso_currency_code,
+					limit: acc.balances.limit,
 				},
 				{ new: true, upsert: true }
 			);

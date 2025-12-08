@@ -1,4 +1,4 @@
-// frontend/app/(tabs)/plaid.tsx
+// frontend/app/plaid.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Platform,
+  TouchableOpacity,
 } from "react-native";
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
@@ -167,77 +168,136 @@ export default function PlaidScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top", "left", "right"]}>
-    <View style={styles.container}>
-       <View style={styles.headerContainer}>
-          <Feather 
-            name="arrow-left" 
-            size={24} 
-            color="#0d9488" 
-            onPress={() => router.back()} // Changed to goBack()
-            style={styles.backButton}
-          />
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Feather name="arrow-left" size={20} color="#0D9488" />
+        </TouchableOpacity>
+        <Text style={styles.header}>Plaid Integration</Text>
+      </View>
+
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }}>
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={[styles.button, loadingLinkToken && styles.buttonDisabled]}
+            onPress={createLinkToken}
+            disabled={loadingLinkToken}
+          >
+            <Text style={styles.buttonText}>
+              {loadingLinkToken ? 'Creating Link Token...' : '1. Create Link Token (preload)'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, !linkToken && styles.buttonDisabled, { backgroundColor: '#4F46E5' }]}
+            onPress={openPlaidLink}
+            disabled={!linkToken}
+          >
+            <Text style={styles.buttonText}>2. Open Plaid</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, (!plaidItemId || loadingTransactions) && styles.buttonDisabled, { backgroundColor: '#10B981' }]}
+            onPress={fetchTransactions}
+            disabled={!plaidItemId || loadingTransactions}
+          >
+            <Text style={styles.buttonText}>
+              {loadingTransactions ? 'Fetching Transactions...' : '3. Fetch Transactions'}
+            </Text>
+          </TouchableOpacity>
         </View>
-      <Text style={styles.header}>Plaid Integration</Text>
 
-      <Button
-        title={
-          loadingLinkToken
-            ? "Creating Link Token..."
-            : "1. Create Link Token (preload)"
-        }
-        onPress={createLinkToken}
-        disabled={loadingLinkToken}
-      />
-
-      <Button
-        title="2. Open Plaid"
-        onPress={openPlaidLink}
-        disabled={!linkToken}
-      />
-
-      <Button
-        title={
-          loadingTransactions
-            ? "Fetching Transactions..."
-            : "3. Fetch Transactions"
-        }
-        onPress={fetchTransactions}
-        disabled={!plaidItemId || loadingTransactions}
-      />
-
-      <ScrollView style={styles.txContainer}>
-        <Text>{transactions}</Text>
+        <View style={styles.txContainer}>
+          <Text style={styles.transactionText}>
+            {transactions}
+          </Text>
+        </View>
       </ScrollView>
-    </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { 
+    flex: 1, 
+    padding: 20,
+    backgroundColor: '#F9FAFB',
+  },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+    marginBottom: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   backButton: {
-    marginRight: 15,
-    padding: 5,
+    marginRight: 12,
+    padding: 8,
+    backgroundColor: '#ECFDF5',
+    borderRadius: 8,
   },
   header: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 20,
-    textAlign: "center",
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#111827',
+    flex: 1,
+    textAlign: 'left',
+    marginLeft: 8,
+    marginBottom: 0,
+  },
+  button: {
+    backgroundColor: '#0D9488',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   txContainer: {
     flex: 1,
     marginTop: 20,
-    padding: 10,
+    padding: 16,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#fff",
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  transactionText: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 20,
+  },
+  section: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
 });
