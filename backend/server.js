@@ -20,7 +20,7 @@ app.get("/health", (req, res) => res.json({ ok: true }));
 //Test route
 app.get("/", (req, res) => {
 	res.status(200).send("Backend is running");
-});
+})
 
 //API routes
 app.use("/api/auth", authRoutes);
@@ -37,3 +37,4 @@ mongoose
 	.catch((err) => console.error("MongoDB connection error:", err));
 
 // module.exports(configuration);
+
