@@ -20,6 +20,7 @@
 		"firebase": "^12.5.0",
 		"mongodb": "^6.20.0",
 		"mongoose": "^8.19.2",
+		"node-fetch": "^2.7.0",
 		"plaid": "^39.1.0"
 	}
 }
