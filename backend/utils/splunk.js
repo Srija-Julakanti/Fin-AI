@@ -1,4 +1,5 @@
 // utils/splunk.js
+require('dotenv').config();  
 const https = require('https');
 const fetch = require('node-fetch'); // if not already installed: npm install node-fetch
 
