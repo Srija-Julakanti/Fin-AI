@@ -1,8 +1,6 @@
 // backend/src/controllers/plaidController.js
 
 const plaidClient = require("../plaidClient");
-// ⭐ Splunk logger
-const { logEvent } = require("../../utils/splunk");
 const PlaidItem = require("../models/PlaidItem");
 const Account = require("../models/Account");
 const Transaction = require("../models/Transaction");
