@@ -12,6 +12,7 @@ import {
 	View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { useAuth } from "../../contexts/AuthContext";
 
 type Item = {
@@ -20,6 +21,9 @@ type Item = {
 	value?: string;
 	onPress?: () => void;
 };
+
+// If you have an env var for your API, swap this:
+const API_BASE_URL = "https://localhost:8000";
 
 export default function SettingsScreen() {
 	const { user, logout } = useAuth();
@@ -38,6 +42,102 @@ export default function SettingsScreen() {
 						await logout(); // clears storage + context
 						router.replace("/login"); // jump out of tabs
 					},
+				},
+			],
+			{ cancelable: true }
+		);
+	};
+
+	const handleDeleteData = async () => {
+		try {
+			const res = await fetch(`${API_BASE_URL}/api/settings/delete-data`, {
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+					// Add auth header if needed, for example:
+					// Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			if (!res.ok) {
+				const text = await res.text();
+				throw new Error(text || "Failed to delete data");
+			}
+
+			Toast.show({
+				type: "success",
+				text1: "Data deleted",
+				text2: "All your app data has been removed.",
+			});
+		} catch (err: any) {
+			Toast.show({
+				type: "error",
+				text1: "Failed to delete data",
+				text2: err?.message ?? "Please try again.",
+			});
+		}
+	};
+
+	const confirmDeleteData = () => {
+		Alert.alert(
+			"Delete all data",
+			"This will permanently delete all your data. This action cannot be undone.\n\nAre you sure?",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Yes, delete everything",
+					style: "destructive",
+					onPress: handleDeleteData,
+				},
+			],
+			{ cancelable: true }
+		);
+	};
+
+	const handleDeleteAccount = async () => {
+		try {
+			const res = await fetch(`${API_BASE_URL}/api/settings/delete-account`, {
+				method: "DELETE",
+				headers: {
+					"Content-Type": "application/json",
+					// Add auth header if needed:
+					// Authorization: `Bearer ${user?.token}`,
+				},
+			});
+
+			if (!res.ok) {
+				const text = await res.text();
+				throw new Error(text || "Failed to delete account");
+			}
+
+			Toast.show({
+				type: "success",
+				text1: "Account deleted",
+				text2: "Your account has been removed.",
+			});
+
+			// Clear local auth + go to login
+			await logout();
+			router.replace("/login");
+		} catch (err: any) {
+			Toast.show({
+				type: "error",
+				text1: "Failed to delete account",
+				text2: err?.message ?? "Please try again.",
+			});
+		}
+	};
+
+	const confirmDeleteAccount = () => {
+		Alert.alert(
+			"Delete Account",
+			"This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you absolutely sure?",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Yes, delete my account",
+					style: "destructive",
+					onPress: handleDeleteAccount,
 				},
 			],
 			{ cancelable: true }
@@ -65,8 +165,16 @@ export default function SettingsScreen() {
 			title: "Security",
 			items: [
 				{ icon: "lock", label: "Change Password" },
-				{ icon: "shield", label: "Biometric Login", value: "Face ID enabled" },
-				{ icon: "shield", label: "Two-Factor Authentication", value: "On" },
+				{
+					icon: "trash-2", // Feather doesn't have "delete"
+					label: "Delete all the data",
+					onPress: confirmDeleteData,
+				},
+				{
+					icon: "trash-2",
+					label: "Delete Account",
+					onPress: confirmDeleteAccount,
+				},
 			],
 		},
 		{
@@ -272,7 +380,11 @@ const styles = StyleSheet.create({
 	rowLabel: {
 		color: "#0f172a",
 		marginBottom: 2,
-		fontWeight: Platform.select({ ios: "600", android: "700", default: "600" }),
+		fontWeight: Platform.select({
+			ios: "600",
+			android: "700",
+			default: "600",
+		}),
 	},
 	rowValue: { color: "#64748b", fontSize: 12 },
 	noticeCard: {
