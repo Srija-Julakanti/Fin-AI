@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.frontend"
+      "bundleIdentifier": "com.anonymous.frontend",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["plaid", "plaidlink"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -29,6 +32,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-dev-client",    
       [
         "expo-splash-screen",
         {

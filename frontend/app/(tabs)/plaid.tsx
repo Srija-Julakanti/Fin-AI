@@ -1,142 +1,210 @@
+// frontend/app/(tabs)/plaid.tsx
 import React, { useState } from "react";
 import {
-	View,
-	Text,
-	Button,
-	Alert,
-	ScrollView,
-	StyleSheet,
-	Platform,
-	ActivityIndicator,
+  View,
+  Text,
+  Button,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { WebView } from "react-native-webview";
 import axios from "axios";
+import { useAuth } from "../../contexts/AuthContext";
+
+import {
+  create,
+  open,
+  LinkTokenConfiguration,
+  LinkSuccess,
+  LinkExit,
+  LinkLogLevel,
+} from "react-native-plaid-link-sdk";
 
 const API_BASE_URL =
-	Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://localhost:8000";
+  Platform.OS === "android" ? "http://10.0.2.2:8000" : "http://localhost:8000";
 
 export default function PlaidScreen() {
-	const router = useRouter();
-	const [linkToken, setLinkToken] = useState<string | null>(null);
-	const [accessToken, setAccessToken] = useState<string | null>(null);
-	const [transactions, setTransactions] = useState<string>(
-		"No transactions yet."
-	);
-	const [openWebView, setOpenWebView] = useState(false);
+  const { user } = useAuth();
 
-	// 1️⃣ Create Link Token
-	const createLinkToken = async () => {
-		try {
-			const resp = await axios.post(
-				`${API_BASE_URL}/api/plaid/create_link_token`
-			);
-			setLinkToken(resp.data.link_token);
-			Alert.alert("Success", "Link token created!");
-		} catch (e) {
-			console.error(e);
-			Alert.alert("Error", "Failed to create link token");
-		}
-	};
+  const [linkToken, setLinkToken] = useState<string | null>(null);
+  const [plaidItemId, setPlaidItemId] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<string>(
+    "No transactions yet."
+  );
+  const [loadingLinkToken, setLoadingLinkToken] = useState(false);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
-	// 2️⃣ Capture public_token from WebView redirect
-	const handleWebViewNavigation = async (event: any) => {
-		const url = event.url;
+  const userId = user?.id;
 
-		if (url.includes("public_token")) {
-			setOpenWebView(false);
+  if (!userId) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.header}>Plaid Integration</Text>
+        <Text>You must be logged in to link a bank.</Text>
+      </View>
+    );
+  }
 
-			const params = new URLSearchParams(url.split("?")[1]);
-			const publicToken = params.get("public_token");
+  // 1️⃣ Ask backend for link_token and preload Link
+  const createLinkToken = async () => {
+    try {
+      setLoadingLinkToken(true);
+      const resp = await axios.post(
+        `${API_BASE_URL}/api/plaid/create_link_token`,
+        { userId }
+      );
+      const token = resp.data.link_token;
+      console.log("Link token from backend:", resp.data);
+      setLinkToken(token);
 
-			if (!publicToken) return;
+      // Preload Plaid Link with this token
+      const config: LinkTokenConfiguration = {
+        token,
+        // optional: noLoadingState: false,
+      };
+      create(config);
 
-			// Exchange token
-			try {
-				const resp = await axios.post(`${API_BASE_URL}/get_access_token`, {
-					publicToken,
-				});
+      Alert.alert("Success", "Link token created & Link preloaded!");
+    } catch (e: any) {
+      console.error("createLinkToken error:", e?.response?.data ?? e);
+      Alert.alert("Error", "Failed to create link token");
+    } finally {
+      setLoadingLinkToken(false);
+    }
+  };
 
-				setAccessToken(resp.data.accessToken);
-				Alert.alert("Success", "Bank Linked!");
-				router.replace("/(tabs)");
-			} catch (error) {
-				console.error(error);
-				Alert.alert("Error", "Failed to exchange token");
-			}
-		}
-	};
+  // 2️⃣ Open Plaid Link (native SDK)
+  const openPlaidLink = () => {
+    if (!linkToken) {
+      Alert.alert("Error", "Create a link token first");
+      return;
+    }
 
-	// 3️⃣ Fetch Transactions
-	const fetchTransactions = async () => {
-		if (!accessToken) return Alert.alert("Error", "Link account first");
-		try {
-			const resp = await axios.post(`${API_BASE_URL}/get_transactions`, {
-				token: accessToken,
-			});
-			setTransactions(JSON.stringify(resp.data.transactions, null, 2));
-		} catch (e) {
-			console.error(e);
-			Alert.alert("Error", "Failed to fetch transactions");
-		}
-	};
+    console.log("Opening Plaid Link with token:", linkToken);
 
-	// 4️⃣ Render WebView Plaid Link Flow
-	if (openWebView && linkToken) {
-		return (
-			<WebView
-				source={{
-					uri: `https://cdn.plaid.com/link/v2/stable/link.html?token=${linkToken}`,
-				}}
-				onNavigationStateChange={handleWebViewNavigation}
-				startInLoadingState
-				renderLoading={() => (
-					<ActivityIndicator size="large" style={{ marginTop: 80 }} />
-				)}
-			/>
-		);
-	}
+    open({
+      onSuccess: async (success: LinkSuccess) => {
+        try {
+          console.log("Plaid onSuccess:", success);
 
-	return (
-		<View style={styles.container}>
-			<Text style={styles.header}>Plaid Integration (WebView)</Text>
+          const publicToken = success.publicToken;
+          const institution = success.metadata.institution;
 
-			<Button title="1. Create Link Token" onPress={createLinkToken} />
+          const resp = await axios.post(
+            `${API_BASE_URL}/api/plaid/get_access_token`,
+            {
+              userId,
+              publicToken,
+              institution,
+            }
+          );
 
-			<Button
-				title="2. Open Plaid (WebView)"
-				onPress={() => setOpenWebView(true)}
-				disabled={!linkToken}
-			/>
+          console.log("Exchange response:", resp.data);
 
-			<Button
-				title="3. Fetch Transactions"
-				onPress={fetchTransactions}
-				disabled={!accessToken}
-			/>
+          setPlaidItemId(resp.data.plaidItemId);
+          Alert.alert("Success", "Bank linked!");
+        } catch (err: any) {
+          console.error(
+            "Error exchanging public token:",
+            err?.response?.data ?? err
+          );
+          Alert.alert("Error", "Failed to save linked account");
+        }
+      },
+      onExit: (exit: LinkExit) => {
+        console.log("Plaid onExit:", exit);
+        if (exit.error) {
+          Alert.alert(
+            "Error",
+            "There was an issue linking your account. Please try again."
+          );
+        }
+      },
+      logLevel: LinkLogLevel.ERROR,
+      // iosPresentationStyle: "MODAL", // optional
+    });
+  };
 
-			<ScrollView style={styles.txContainer}>
-				<Text>{transactions}</Text>
-			</ScrollView>
-		</View>
-	);
+  // 3️⃣ Sync + display transactions via backend
+  const fetchTransactions = async () => {
+    if (!plaidItemId) {
+      Alert.alert("Error", "Link an account first");
+      return;
+    }
+
+    try {
+      setLoadingTransactions(true);
+      const resp = await axios.post(
+        `${API_BASE_URL}/api/plaid/transactions/sync`,
+        {
+          userId,
+          plaidItemId
+        }
+      );
+
+      console.log("Transactions sync response:", resp.data);
+      setTransactions(JSON.stringify(resp.data.transactions, null, 2));
+    } catch (e: any) {
+      console.error("fetchTransactions error:", e?.response?.data ?? e);
+      Alert.alert("Error", "Failed to fetch transactions");
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Plaid Integration</Text>
+
+      <Button
+        title={
+          loadingLinkToken
+            ? "Creating Link Token..."
+            : "1. Create Link Token (preload)"
+        }
+        onPress={createLinkToken}
+        disabled={loadingLinkToken}
+      />
+
+      <Button
+        title="2. Open Plaid"
+        onPress={openPlaidLink}
+        disabled={!linkToken}
+      />
+
+      <Button
+        title={
+          loadingTransactions
+            ? "Fetching Transactions..."
+            : "3. Fetch Transactions"
+        }
+        onPress={fetchTransactions}
+        disabled={!plaidItemId || loadingTransactions}
+      />
+
+      <ScrollView style={styles.txContainer}>
+        <Text>{transactions}</Text>
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-	container: { flex: 1, padding: 20 },
-	header: {
-		fontSize: 24,
-		fontWeight: "700",
-		marginBottom: 20,
-		textAlign: "center",
-	},
-	txContainer: {
-		flex: 1,
-		marginTop: 20,
-		padding: 10,
-		borderWidth: 1,
-		borderColor: "#ccc",
-		borderRadius: 8,
-		backgroundColor: "#fff",
-	},
+  container: { flex: 1, padding: 20 },
+  header: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  txContainer: {
+    flex: 1,
+    marginTop: 20,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+  },
 });
