@@ -93,7 +93,7 @@ export default function Forecast({
 				</View>
 
 				{/* Balance projection (sparkline placeholder) */}
-				<View style={styles.card}>
+				{/*<View style={styles.card}>
 					<Text style={styles.cardTitle}>Balance Projection</Text>
 
 					<View style={styles.lineChartPlaceholder}>
@@ -127,7 +127,7 @@ export default function Forecast({
 							</View>
 						</View>
 					</View>
-				</View>
+				</View> */}
 
 				{/* --- Spending by Category: use the new component --- */}
 				<SpendingByCategory
