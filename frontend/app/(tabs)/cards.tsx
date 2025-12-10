@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
 	View,
 	Text,
@@ -15,7 +15,7 @@ import {
 	Plus,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import axios from "axios";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -105,9 +105,14 @@ export default function Cards() {
 		fetchCardsData();
 	};
 
-	useEffect(() => {
-		fetchCardsData();
-	}, [user?.id]);
+	useFocusEffect(
+		useCallback(() => {
+			fetchCardsData();
+		}, [])
+	);
+	// useEffect(() => {
+	// 	fetchCardsData();
+	// }, [user?.id]);
 
 	const getCardColors = (cardName: string): [string, string] => {
 		// Map card names to color gradients
@@ -338,10 +343,10 @@ export default function Cards() {
 											style={[
 												styles.recRow,
 												index <
-													Math.min(
-														3,
-														(spendingInsights?.topCategories?.length || 0) - 1
-													) && styles.recRowBorder,
+												Math.min(
+													3,
+													(spendingInsights?.topCategories?.length || 0) - 1
+												) && styles.recRowBorder,
 											]}
 										>
 											<View style={{ flex: 1 }}>

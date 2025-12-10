@@ -295,7 +295,6 @@ async function getHomeData(req, res) {
 			console.error("Income fetch failed:", err.response?.data || err);
 			// don't block home data if this fails
 		}
-
 		response = {
 			...response,
 			totalBalance,

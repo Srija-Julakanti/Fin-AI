@@ -477,7 +477,7 @@ export default function Register() {
 
       await register(apiUser, token ?? null, true);
 
-      router.replace("/plaid");
+      router.push("/");
     } catch (err: any) {
       Alert.alert("Registration failed", err?.message ?? "Please try again.");
     } finally {

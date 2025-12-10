@@ -8,10 +8,10 @@ const deleteData = async (req, res) => {
     try {
         const { userId } = req.body;
         if (!userId) return res.status(400).json({ error: "Missing userId" });
-        PlaidItem.deleteMany({ user: userId });
-        Account.deleteMany({ user: userId });
-        Transaction.deleteMany({ user: userId });
-        PlaidAccountToken.deleteMany({ user: userId });
+        await PlaidItem.deleteMany({ user: userId });
+        await Account.deleteMany({ user: userId });
+        await Transaction.deleteMany({ user: userId });
+        await PlaidAccountToken.deleteMany({ user: userId });
         res.status(200).json({ message: "Data deleted successfully" });
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -22,11 +22,11 @@ const deleteAccount = async (req, res) => {
     try {
         const { userId } = req.body;
         if (!userId) return res.status(400).json({ error: "Missing userId" });
-        PlaidItem.deleteMany({ user: userId });
-        Account.deleteMany({ user: userId });
-        Transaction.deleteMany({ user: userId });
-        PlaidAccountToken.deleteMany({ user: userId });
-        User.deleteOne({ _id: userId });
+        await PlaidItem.deleteMany({ user: userId });
+        await Account.deleteMany({ user: userId });
+        await Transaction.deleteMany({ user: userId });
+        await PlaidAccountToken.deleteMany({ user: userId });
+        await User.deleteOne({ _id: userId });
         res.status(200).json({ message: "Account deleted successfully" });
     } catch (error) {
         res.status(400).json({ error: error.message });

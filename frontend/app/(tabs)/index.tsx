@@ -1,12 +1,12 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState, useCallback } from "react";
 import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AIInsightBanner from "../../components/AIInsigntBanner";
 import FinanceCard from "../../components/FinanceCard";
 import { useAuth } from "../../contexts/AuthContext";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { FloatingChatButton } from "@/components/FloatingChatButton";
 import { ArrowUpRight } from "lucide-react-native";
 
@@ -33,120 +33,79 @@ type HomeData = {
 	activeSubscriptionsNames?: string[]
 };
 
-type Txn = {
-	id: string;
-	title: string;
-	subtitle: string;
-	amount: number; // negative = expense, positive = income
-	icon: keyof typeof Feather.glyphMap;
-};
-
-const RECENT_TXNS: Txn[] = [
-	{
-		id: "1",
-		title: "Starbucks",
-		subtitle: "Coffee • 9:42 AM",
-		amount: -6.25,
-		icon: "coffee" as any,
-	}, // feather doesn't have coffee; fallback to "cup" if you have a custom set
-	{
-		id: "2",
-		title: "Salary",
-		subtitle: "Oct Payroll",
-		amount: 3200,
-		icon: "dollar-sign",
-	},
-	{
-		id: "3",
-		title: "Netflix",
-		subtitle: "Subscription",
-		amount: -15.99,
-		icon: "film",
-	},
-	{
-		id: "4",
-		title: "Whole Foods",
-		subtitle: "Groceries",
-		amount: -82.33,
-		icon: "shopping-bag",
-	},
-	{
-		id: "5",
-		title: "Gas Rebate",
-		subtitle: "Rewards",
-		amount: 12.5,
-		icon: "gift",
-	},
-];
-
 export default function HomeScreen() {
 	const { user } = useAuth();
 	const router = useRouter();
 	const [homeData, setHomeData] = useState<HomeData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const fetchHomeData = async () => {
+		let USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
 
-	useEffect(() => {
-		const fetchHomeData = async () => {
-			let USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
+		try {
+			setLoading(true);
+			const response = await fetch(`http://localhost:8000/api/home?userId=${USER_ID}`);
 
-			try {
-				setLoading(true);
-				const response = await fetch(`http://localhost:8000/api/home?userId=${USER_ID}`);
-
-				if (!response.ok) {
-					console.log('Failed to fetch home data');
-				}
-
-				const data = await response.json();
-
-				// Transform the data to match our frontend types
-				const transformedData: HomeData = {
-					hasLinkedAccounts: data.hasLinkedAccounts,
-
-					// balances & monthly stats from backend
-					totalBalance: data.totalBalance ?? 0,
-					monthlyIncome: data.monthlyIncome ?? 0,
-					monthlyExpenses: data.monthlyExpenses ?? 0,
-					monthlyDelta: data.monthlyDelta ?? 0,
-					monthlyDeltaPercentage: data.monthlyDeltaPercentage ?? 0,
-
-					// recent transactions
-					recentTransactions: data.recentTransactions?.map((txn: any) => ({
-						id: txn._id,
-						title: txn.name || "Transaction",
-						subtitle: txn.account?.name || "Account",
-						amount: txn.amount || 0,
-						icon: getTransactionIcon(txn.category?.[0] || "other"),
-						date: txn.date,
-					})),
-
-					// upcoming bills – prefer backend aggregate if present
-					upcomingBillsAmount:
-						data.upcomingBillsAmount ??
-						(data.upcomingBills?.reduce(
-							(sum: number, bill: any) => sum + (bill.amount || 0),
-							0
-						) ?? 0),
-					upcomingBillsCount: data.upcomingBillsCount ?? data.upcomingBills?.length ?? 0,
-
-					// 👇 subscriptions & rewards from backend
-					activeSubscriptionsCount: data.activeSubscriptionsCount ?? 0,
-					activeSubscriptionsTotal: data.activeSubscriptionsTotal ?? 0,
-					availableRewards: data.availableRewards ?? 0,
-				};
-
-				setHomeData(transformedData);
-			} catch (err) {
-				console.error('Error fetching home data:', err);
-				setError('Failed to load data. Please try again later.');
-			} finally {
-				setLoading(false);
+			if (!response.ok) {
+				console.log('Failed to fetch home data');
 			}
-		};
 
-		fetchHomeData();
-	}, []);
+			const data = await response.json();
+
+			// Transform the data to match our frontend types
+			const transformedData: HomeData = {
+				hasLinkedAccounts: data.hasLinkedAccounts,
+
+				// balances & monthly stats from backend
+				totalBalance: data.totalBalance ?? 0,
+				monthlyIncome: data.monthlyIncome ?? 0,
+				monthlyExpenses: data.monthlyExpenses ?? 0,
+				monthlyDelta: data.monthlyDelta ?? 0,
+				monthlyDeltaPercentage: data.monthlyDeltaPercentage ?? 0,
+
+				// recent transactions
+				recentTransactions: data.recentTransactions?.map((txn: any) => ({
+					id: txn._id,
+					title: txn.name || "Transaction",
+					subtitle: txn.account?.name || "Account",
+					amount: txn.amount || 0,
+					icon: getTransactionIcon(txn.category?.[0] || "other"),
+					date: txn.date,
+				})),
+
+				// upcoming bills – prefer backend aggregate if present
+				upcomingBillsAmount:
+					data.upcomingBillsAmount ??
+					(data.upcomingBills?.reduce(
+						(sum: number, bill: any) => sum + (bill.amount || 0),
+						0
+					) ?? 0),
+				upcomingBillsCount: data.upcomingBillsCount ?? data.upcomingBills?.length ?? 0,
+
+				// 👇 subscriptions & rewards from backend
+				activeSubscriptionsCount: data.activeSubscriptionsCount ?? 0,
+				activeSubscriptionsTotal: data.activeSubscriptionsTotal ?? 0,
+				activeSubscriptionsNames: data.activeSubscriptionsNames ?? [],
+				availableRewards: data.availableRewards ?? 0,
+			};
+
+			setHomeData(transformedData);
+		} catch (err) {
+			console.error('Error fetching home data:', err);
+			setError('Failed to load data. Please try again later.');
+		} finally {
+			setLoading(false);
+		}
+	};
+	useFocusEffect(
+		useCallback(() => {
+			fetchHomeData();
+		}, [])
+	);
+	// useEffect(() => {
+
+	// 	fetchHomeData();
+	// }, []);
 
 	// Helper function to get icon based on transaction category
 	const getTransactionIcon = (category: string): keyof typeof Feather.glyphMap => {
@@ -239,7 +198,7 @@ export default function HomeScreen() {
 
 				{/* Income / Expenses grid */}
 				<View style={styles.grid2}>
-					<View style={{ flex: 1 }}>
+					<View style={{ flex: 1, backgroundColor: "#fff", padding: 15, borderRadius: 12 }}>
 						<FinanceCard
 							title="Credit"
 							value={homeData?.hasLinkedAccounts ? formatCurrency(homeData.monthlyIncome) : '---'}
@@ -253,7 +212,7 @@ export default function HomeScreen() {
 							}
 						/>
 					</View>
-					<View style={{ flex: 1 }}>
+					<View style={{ flex: 1, backgroundColor: "#fff", padding: 15, borderRadius: 12 }}>
 						<FinanceCard
 							title="Debit"
 							value={homeData?.hasLinkedAccounts ? formatCurrency(homeData.monthlyExpenses) : '---'}

@@ -12,8 +12,8 @@ import {
 	View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
 import { useAuth } from "../../contexts/AuthContext";
+import axios from "axios";
 
 type Item = {
 	icon: keyof typeof Feather.glyphMap;
@@ -23,7 +23,7 @@ type Item = {
 };
 
 // If you have an env var for your API, swap this:
-const API_BASE_URL = "https://localhost:8000";
+const API_BASE_URL = "http://localhost:8000";
 
 export default function SettingsScreen() {
 	const { user, logout } = useAuth();
@@ -50,31 +50,16 @@ export default function SettingsScreen() {
 
 	const handleDeleteData = async () => {
 		try {
-			const res = await fetch(`${API_BASE_URL}/api/settings/delete-data`, {
-				method: "DELETE",
-				headers: {
-					"Content-Type": "application/json",
-					// Add auth header if needed, for example:
-					// Authorization: `Bearer ${user?.token}`,
-				},
-			});
-
-			if (!res.ok) {
-				const text = await res.text();
+			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-data`, { userId: '6939cd4bf2714dcb53f43c56' })
+			if (res.status != 200) {
+				const text = await res.data.message;
 				throw new Error(text || "Failed to delete data");
 			}
 
-			Toast.show({
-				type: "success",
-				text1: "Data deleted",
-				text2: "All your app data has been removed.",
-			});
+			Alert.alert("Success", "Account data deleted successfully");
 		} catch (err: any) {
-			Toast.show({
-				type: "error",
-				text1: "Failed to delete data",
-				text2: err?.message ?? "Please try again.",
-			});
+			Alert.alert("Error", "Failed to delete data!! Please try again");
+
 		}
 	};
 
@@ -96,35 +81,19 @@ export default function SettingsScreen() {
 
 	const handleDeleteAccount = async () => {
 		try {
-			const res = await fetch(`${API_BASE_URL}/api/settings/delete-account`, {
-				method: "DELETE",
-				headers: {
-					"Content-Type": "application/json",
-					// Add auth header if needed:
-					// Authorization: `Bearer ${user?.token}`,
-				},
-			});
-
-			if (!res.ok) {
-				const text = await res.text();
+			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-account`, { userId: '6939cd4bf2714dcb53f43c56' })
+			if (res.status != 200) {
+				const text = await res.data.message;
 				throw new Error(text || "Failed to delete account");
 			}
-
-			Toast.show({
-				type: "success",
-				text1: "Account deleted",
-				text2: "Your account has been removed.",
-			});
+			Alert.alert("Success", "Account deleted and navigate to login");
 
 			// Clear local auth + go to login
 			await logout();
 			router.replace("/login");
 		} catch (err: any) {
-			Toast.show({
-				type: "error",
-				text1: "Failed to delete account",
-				text2: err?.message ?? "Please try again.",
-			});
+			Alert.alert("Error", "Failed to delete account!! Please try again");
+
 		}
 	};
 
