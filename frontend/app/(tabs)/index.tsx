@@ -30,6 +30,7 @@ type HomeData = {
 		icon: string;
 		date: string;
 	}>;
+	activeSubscriptionsNames?: string[]
 };
 
 type Txn = {
@@ -87,11 +88,11 @@ export default function HomeScreen() {
 
 	useEffect(() => {
 		const fetchHomeData = async () => {
-			console.log(user);
+			let USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
 
 			try {
 				setLoading(true);
-				const response = await fetch(`http://localhost:8000/api/home?userId=${user?.id}`);
+				const response = await fetch(`http://localhost:8000/api/home?userId=${USER_ID}`);
 
 				if (!response.ok) {
 					console.log('Failed to fetch home data');
@@ -102,18 +103,37 @@ export default function HomeScreen() {
 				// Transform the data to match our frontend types
 				const transformedData: HomeData = {
 					hasLinkedAccounts: data.hasLinkedAccounts,
-					totalBalance: data.totalBalance,
+
+					// balances & monthly stats from backend
+					totalBalance: data.totalBalance ?? 0,
+					monthlyIncome: data.monthlyIncome ?? 0,
+					monthlyExpenses: data.monthlyExpenses ?? 0,
+					monthlyDelta: data.monthlyDelta ?? 0,
+					monthlyDeltaPercentage: data.monthlyDeltaPercentage ?? 0,
+
+					// recent transactions
 					recentTransactions: data.recentTransactions?.map((txn: any) => ({
 						id: txn._id,
-						title: txn.name || 'Transaction',
-						subtitle: txn.account?.name || 'Account',
+						title: txn.name || "Transaction",
+						subtitle: txn.account?.name || "Account",
 						amount: txn.amount || 0,
-						icon: getTransactionIcon(txn.category?.[0] || 'other'),
-						date: txn.date
+						icon: getTransactionIcon(txn.category?.[0] || "other"),
+						date: txn.date,
 					})),
-					upcomingBillsAmount: data.upcomingBills?.reduce((sum: number, bill: any) => sum + (bill.amount || 0), 0),
-					upcomingBillsCount: data.upcomingBills?.length || 0,
-					// Add any other transformations needed for your UI
+
+					// upcoming bills – prefer backend aggregate if present
+					upcomingBillsAmount:
+						data.upcomingBillsAmount ??
+						(data.upcomingBills?.reduce(
+							(sum: number, bill: any) => sum + (bill.amount || 0),
+							0
+						) ?? 0),
+					upcomingBillsCount: data.upcomingBillsCount ?? data.upcomingBills?.length ?? 0,
+
+					// 👇 subscriptions & rewards from backend
+					activeSubscriptionsCount: data.activeSubscriptionsCount ?? 0,
+					activeSubscriptionsTotal: data.activeSubscriptionsTotal ?? 0,
+					availableRewards: data.availableRewards ?? 0,
 				};
 
 				setHomeData(transformedData);
@@ -281,6 +301,18 @@ export default function HomeScreen() {
 							<Text style={styles.rowSub}>
 								{formatCurrency(homeData.activeSubscriptionsTotal)}/month total
 							</Text>
+							{homeData.activeSubscriptionsNames?.length ? (
+								<Text
+									style={{
+										marginTop: 6,
+										fontSize: 12,
+										color: "#64748b",
+									}}
+									numberOfLines={2}
+								>
+									{homeData.activeSubscriptionsNames.join(", ")}
+								</Text>
+							) : null}
 						</View>
 
 						<View style={[styles.card]}>
@@ -301,7 +333,7 @@ export default function HomeScreen() {
 				<View style={{ gap: 12 }}>
 					<View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
 						<Text style={styles.sectionTitle}>Recent Transactions</Text>
-						{!homeData?.hasLinkedAccounts ?
+						{homeData?.hasLinkedAccounts ?
 							<Pressable
 								onPress={() => router.push("/alltransactions" as any)}
 								style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
