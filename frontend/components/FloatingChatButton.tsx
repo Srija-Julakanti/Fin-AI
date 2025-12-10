@@ -34,7 +34,7 @@ export function FloatingChatButton({ onClick }: FloatingChatButtonProps) {
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 96, // ~ bottom-24 in tailwind (with tab bar spacing)
+    bottom: 46, // ~ bottom-24 in tailwind (with tab bar spacing)
     right: 24,  // right-6
     zIndex: 40,
   },

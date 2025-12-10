@@ -115,6 +115,116 @@ async function getHomeData(req, res) {
 	}
 }
 
+async function getAllTransactionsForUser(req, res) {
+	try {
+		const userId = req.query.userId || req.body.userId;
+		if (!userId) {
+			return res.status(400).json({ error: "Missing userId" });
+		}
+
+		const limit = Number(req.query.limit) || 200;
+
+		// Fetch from newest to oldest
+		const txs = await Transaction.find({ user: userId })
+			.sort({ date: -1 })
+			.limit(limit)
+			.lean();
+
+		// Helper: map Plaid categories -> UI categories
+		function mapCategory(tx) {
+			const primary = tx.raw?.personal_finance_category?.primary;
+
+			switch (primary) {
+				case "TRANSPORTATION":
+					return "Transportation";
+
+				case "RENT_AND_UTILITIES":
+					return "Rent & Utilities";
+
+				case "PERSONAL_CARE":
+					return "Personal Care";
+
+				case "TRANSFER_OUT":
+					return "Transfer Out";
+
+				case "LOAN_PAYMENTS":
+					return "Loan Payments";
+
+				case "INCOME":
+					return "Income";
+
+				case "FOOD_AND_DRINK":
+					return "Food & Drink";
+
+				case "TRAVEL":
+					return "Travel";
+
+				case "GENERAL_MERCHANDISE":
+					return "General Merchandise";
+
+				case "ENTERTAINMENT":
+					return "Entertainment";
+
+				default:
+					// Fallbacks: use legacy category array if present
+					if (Array.isArray(tx.category) && tx.category.length > 0) {
+						const raw = tx.category[0]; // e.g. "RESTAURANTS"
+						return raw
+							.split("_")
+							.map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+							.join(" ");
+					}
+
+					return "Other";
+			}
+		}
+
+		const uiTxs = txs.map((t) => {
+			// `t.amount` is the Plaid amount (debit positive, credit negative)
+			const isIncome = t.amount < 0;
+			const absAmount = Math.abs(t.amount);
+
+			const jsDate = new Date(t.date); // stored as ISO/date
+
+			// Format date like "Dec 1, 2024"
+			const date = jsDate.toLocaleDateString("en-US", {
+				month: "short",
+				day: "numeric",
+				year: "numeric",
+			});
+
+			// Format time like "9:00 AM"
+			const time = jsDate.toLocaleTimeString("en-US", {
+				hour: "numeric",
+				minute: "2-digit",
+			});
+
+			return {
+				id: String(t._id),
+				name: t.merchantName || t.name,
+				category: mapCategory(t),
+				amount: absAmount,
+				type: isIncome ? "income" : "expense",
+				date,
+				time,
+				// send ISO string; client will turn into a Date object
+				dateObj: jsDate.toISOString(),
+			};
+		});
+
+		return res.json({
+			count: uiTxs.length,
+			transactions: uiTxs,
+		});
+	} catch (err) {
+		console.error("getAllTransactionsForUser error:", err);
+		return res
+			.status(500)
+			.json({ error: "Failed to fetch all transactions" });
+	}
+}
+
 module.exports = {
 	getHomeData,
+	getAllTransactionsForUser
 };

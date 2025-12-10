@@ -5,5 +5,6 @@ const homeController = require('../controllers/HomeController');
 
 // Get home screen data
 router.get('/', homeController.getHomeData);
+router.get('/all-transactions', homeController.getAllTransactionsForUser);
 
 module.exports = router;

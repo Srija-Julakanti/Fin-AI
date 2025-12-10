@@ -208,7 +208,7 @@ export default function Chat() {
             keyExtractor={(_, idx) => String(idx)}
             renderItem={renderMessage}
             contentContainerStyle={styles.messagesContent}
-            // inversion not used; we append normally and scrollToEnd
+          // inversion not used; we append normally and scrollToEnd
           />
 
           {/* Quick actions shown only when only initial AI message exists */}

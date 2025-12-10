@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -12,7 +12,27 @@ type Props = {
 	onPlanExpense?: () => void;
 };
 
-const categoryData = [
+type CategoryDatum = {
+	name: string;
+	value: number;
+	color: string;
+};
+
+type UpcomingExpense = {
+	name: string;
+	amount: number;
+	date: string;
+	category: string;
+};
+
+type UpcomingIncome = {
+	name: string;
+	amount: number;
+	date: string;
+};
+
+// ---- DEFAULT (fallback) DATA ----
+const defaultCategoryData: CategoryDatum[] = [
 	{ name: "Transportation", value: 850, color: "#3B82F6" },
 	{ name: "Groceries", value: 650, color: "#10B981" },
 	{ name: "Bills", value: 1200, color: "#F59E0B" },
@@ -29,7 +49,7 @@ const lineData = [
 	{ date: "Nov 30", balance: 26400 },
 ];
 
-const upcomingExpenses = [
+const defaultUpcomingExpenses: UpcomingExpense[] = [
 	{ name: "Rent Payment", amount: 2400, date: "Nov 15", category: "Housing" },
 	{ name: "Car Insurance", amount: 180, date: "Nov 18", category: "Insurance" },
 	{
@@ -40,7 +60,7 @@ const upcomingExpenses = [
 	},
 ];
 
-const upcomingIncome = [
+const defaultUpcomingIncome: UpcomingIncome[] = [
 	{ name: "Salary", amount: 4500, date: "Nov 30" },
 	{ name: "Freelance Project", amount: 1200, date: "Dec 5" },
 ];
@@ -50,6 +70,59 @@ export default function Forecast({
 	onAdjustSavings,
 	onPlanExpense,
 }: Props) {
+	// ---- STATE FROM API ----
+	const [categoryData, setCategoryData] =
+		useState<CategoryDatum[]>(defaultCategoryData);
+	const [upcomingExpenses, setUpcomingExpenses] =
+		useState<UpcomingExpense[]>(defaultUpcomingExpenses);
+	const [upcomingIncome, setUpcomingIncome] =
+		useState<UpcomingIncome[]>(defaultUpcomingIncome);
+
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	// TODO: replace with your real values or config
+	const USER_ID = "691e8c0b97b11dbc9a7d4144";
+	const API_BASE_URL = "http://localhost:8000"; // or from env
+
+	useEffect(() => {
+		console.log("Fetching forecast for user:", USER_ID);
+		const fetchForecast = async () => {
+			try {
+				setLoading(true);
+				setError(null);
+
+				const res = await fetch(
+					`${API_BASE_URL}/api/forecast?userId=${USER_ID}`
+				);
+				console.log(res);
+				if (!res.ok) {
+					throw new Error(`HTTP ${res.status}`);
+				}
+
+				const json = await res.json();
+
+				if (Array.isArray(json.spendingByCategory)) {
+					setCategoryData(json.spendingByCategory);
+				}
+				if (Array.isArray(json.upcomingExpenses)) {
+					setUpcomingExpenses(json.upcomingExpenses);
+				}
+				if (Array.isArray(json.upcomingIncome)) {
+					setUpcomingIncome(json.upcomingIncome);
+				}
+			} catch (e: any) {
+				console.error("Failed to load forecast", e);
+				setError("Failed to load forecast");
+				// fallback data stays in state
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchForecast();
+	}, []);
+
 	const totalSpending = categoryData.reduce((s, c) => s + c.value, 0);
 
 	return (
@@ -69,17 +142,8 @@ export default function Forecast({
 							</View>
 							<View style={{ marginLeft: 10 }}>
 								<Text style={styles.headerTitle}>Financial Forecast</Text>
-								<Text style={styles.headerSubtitle}>Next 45 days</Text>
+								{/* <Text style={styles.headerSubtitle}>Next 45 days</Text> */}
 							</View>
-						</View>
-					</View>
-
-					<View style={styles.projectionCard}>
-						<Text style={styles.projLabel}>Projected Balance (Dec 15)</Text>
-						<Text style={styles.projValue}>$28,200</Text>
-						<View style={styles.projDeltaRow}>
-							<Feather name="trending-up" size={14} color="#D1FAE5" />
-							<Text style={styles.projDeltaText}>+ $3,618 from today</Text>
 						</View>
 					</View>
 				</LinearGradient>
@@ -92,44 +156,7 @@ export default function Forecast({
 					/>
 				</View>
 
-				{/* Balance projection (sparkline placeholder) */}
-				{/*<View style={styles.card}>
-					<Text style={styles.cardTitle}>Balance Projection</Text>
-
-					<View style={styles.lineChartPlaceholder}>
-						<View style={styles.sparklineRow}>
-							{lineData.map((d, i) => {
-								const balances = lineData.map((x) => x.balance);
-								const min = Math.min(...balances);
-								const max = Math.max(...balances);
-								const ratio =
-									max === min ? 0.5 : (d.balance - min) / (max - min);
-								const height = 40 + ratio * 56;
-								return <View key={i} style={[styles.sparkBar, { height }]} />;
-							})}
-						</View>
-
-						<View style={styles.legendRow}>
-							<View style={styles.legendItem}>
-								<View
-									style={[styles.legendSwatch, { backgroundColor: "#14B8A6" }]}
-								/>
-								<Text style={styles.legendText}>Actual</Text>
-							</View>
-							<View style={styles.legendItem}>
-								<View
-									style={[
-										styles.legendSwatch,
-										{ backgroundColor: "#14B8A6", opacity: 0.45 },
-									]}
-								/>
-								<Text style={styles.legendText}>Projected</Text>
-							</View>
-						</View>
-					</View>
-				</View> */}
-
-				{/* --- Spending by Category: use the new component --- */}
+				{/* --- Spending by Category --- */}
 				<SpendingByCategory
 					data={categoryData}
 					onPressCategory={(name) => onCategorySelect?.(name)}
@@ -179,10 +206,14 @@ export default function Forecast({
 					<View style={styles.rowBetween}>
 						<Text style={styles.sectionTitle}>Expected Income</Text>
 						<Text style={[styles.sectionRight, { color: "#16A34A" }]}>
-							+$
+							+
 							{upcomingIncome
 								.reduce((s, i) => s + i.amount, 0)
-								.toLocaleString()}
+								.toLocaleString(undefined, {
+									style: "currency",
+									currency: "USD",
+								})
+								.replace("$", "$")}
 						</Text>
 					</View>
 
@@ -240,6 +271,7 @@ export default function Forecast({
 	);
 }
 
+// ---- styles unchanged ----
 const styles = StyleSheet.create({
 	safe: { flex: 1, backgroundColor: "#F8FAFC" },
 	container: { paddingBottom: 28 },

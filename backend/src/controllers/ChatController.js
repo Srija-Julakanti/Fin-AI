@@ -1,5 +1,5 @@
 // src/controllers/ChatController.js
-const Transaction = require('../models/Transaction'); // adjust path if your model file differs
+const Transaction = require('../models/Transaction');
 const { computeBudgetFromTransactions } = require('../../utils/budgetUtils');
 const { callOllama } = require('../services/ollamaService');
 
@@ -9,15 +9,23 @@ async function chatHandler(req, res) {
     if (!message) return res.status(400).json({ error: 'message required' });
 
     const lower = message.toLowerCase();
-    const isBudgetIntent = ['budget','spend','save','savings','spending','expense'].some(k => lower.includes(k));
+    const isBudgetIntent = ['budget', 'spend', 'save', 'savings', 'spending', 'expense']
+      .some(k => lower.includes(k));
 
     if (isBudgetIntent) {
-      if (!userId) return res.status(400).json({ error: 'userId required for budget intent' });
-      // fetch transactions (last 6 months helper will filter again)
-      const txns = await Transaction.find({ userId }).lean();
-      const budgetData = computeBudgetFromTransactions(txns, { monthlyIncome, savingsTargetPct });
+      if (!userId) {
+        return res.status(400).json({ error: 'userId required for budget intent' });
+      }
 
-      // create concise prompt using ONLY aggregated data
+      // ✅ IMPORTANT: field is `user`, not `userId`
+      const txns = await Transaction.find({ user: userId }).lean();
+      console.log('chatHandler budget intent tx count:', txns.length);
+
+      const budgetData = computeBudgetFromTransactions(txns, {
+        monthlyIncome,
+        savingsTargetPct,
+      });
+
       const prompt = `
 You are Fin-AI, a concise friendly finance assistant.
 
@@ -41,7 +49,7 @@ Keep response short (4-6 lines), friendly, and use only numbers from the data ab
       const reply = await callOllama(prompt, 'llama3');
       return res.json({ ok: true, reply });
     } else {
-      // general chat: small system prompt
+      // general chat
       const prompt = `
 You are Fin-AI, a helpful finance assistant.
 User: "${message}"
