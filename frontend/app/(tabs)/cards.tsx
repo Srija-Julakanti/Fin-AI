@@ -7,12 +7,14 @@ import {
 	TouchableOpacity,
 	ActivityIndicator,
 	RefreshControl,
+	Alert,
 } from "react-native";
 import {
 	CreditCard as CardIcon,
 	Star,
 	Sparkles,
 	Plus,
+	Trash2,
 } from "lucide-react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
@@ -58,6 +60,7 @@ export default function Cards() {
 		useState<SpendingInsight | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
+	const [deletingId, setDeletingId] = useState<string | null>(null);
 
 	const fetchCardsData = async () => {
 		try {
@@ -69,7 +72,6 @@ export default function Cards() {
 			});
 
 			if (response.data.success) {
-				// Transform API data to match our CardItem type
 				const transformedCards = response.data.accounts.map((account: any) => ({
 					id: account.id,
 					name: account.name,
@@ -93,7 +95,6 @@ export default function Cards() {
 			}
 		} catch (error) {
 			console.error("Error fetching cards data:", error);
-			// Handle error (e.g., show error message)
 		} finally {
 			setLoading(false);
 			setRefreshing(false);
@@ -110,31 +111,25 @@ export default function Cards() {
 			fetchCardsData();
 		}, [])
 	);
-	// useEffect(() => {
-	// 	fetchCardsData();
-	// }, [user?.id]);
 
 	const getCardColors = (cardName: string): [string, string] => {
-		// Map card names to color gradients
 		const colorMap: Record<string, [string, string]> = {
-			chase: ["#3B82F6", "#4F46E5"], // blue to indigo
-			"american express": ["#22C55E", "#0D9488"], // green to teal
-			citi: ["#EC4899", "#8B5CF6"], // pink to purple
-			"capital one": ["#06B6D4", "#3B82F6"], // cyan to blue
-			discover: ["#F59E0B", "#F97316"], // amber to orange
-			savings: ["#8B5CF6", "#EC4899"], // purple to pink
-			checking: ["#3B82F6", "#06B6D4"], // blue to cyan
-			investment: ["#10B981", "#22C55E"], // green to emerald
+			chase: ["#3B82F6", "#4F46E5"],
+			"american express": ["#22C55E", "#0D9488"],
+			citi: ["#EC4899", "#8B5CF6"],
+			"capital one": ["#06B6D4", "#3B82F6"],
+			discover: ["#F59E0B", "#F97316"],
+			savings: ["#8B5CF6", "#EC4899"],
+			checking: ["#3B82F6", "#06B6D4"],
+			investment: ["#10B981", "#22C55E"],
 		};
 
 		const lowerName = cardName.toLowerCase();
-		// Try to match card name with color map, otherwise pick a random color
 		const matchedColor = Object.entries(colorMap).find(([key]) =>
 			lowerName.includes(key)
 		);
 		if (matchedColor) return matchedColor[1];
 
-		// Default colors if no match found
 		const defaultColors = Object.values(colorMap);
 		return defaultColors[Math.floor(Math.random() * defaultColors.length)];
 	};
@@ -163,6 +158,51 @@ export default function Cards() {
 			style: "currency",
 			currency: "USD",
 		}).format(amount);
+	};
+
+	// ---- delete flow ----
+	const handleDeleteCard = async (card: CardItem) => {
+		if (!user?.id) return;
+
+		try {
+			setDeletingId(card.id);
+
+			// Adjust this endpoint/body if your backend uses a different route
+			await axios.post(`${API_BASE_URL}/cards/delete`, {
+				userId: user.id,
+				cardId: card.id,
+			});
+
+			setCards((prev) => prev.filter((c) => c.id !== card.id));
+
+			Alert.alert(
+				"Card removed",
+				`Card ending in ${card.last4} has been deleted successfully.`
+			);
+		} catch (err) {
+			console.error("Error deleting card:", err);
+			Alert.alert(
+				"Unable to delete",
+				"We couldn't remove this card. Please try again."
+			);
+		} finally {
+			setDeletingId(null);
+		}
+	};
+
+	const confirmDelete = (card: CardItem) => {
+		Alert.alert(
+			"Remove this card?",
+			`Are you sure you want to remove the card ending in ${card.last4}?`,
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Delete",
+					style: "destructive",
+					onPress: () => handleDeleteCard(card),
+				},
+			]
+		);
 	};
 
 	if (loading && !refreshing) {
@@ -231,7 +271,10 @@ export default function Cards() {
 
 							<View style={{ gap: 16 }}>
 								{cards.map((card, index) => (
-									<View key={`${card.id}-${index}`}>
+									<View
+										key={`${card.id}-${index}`}
+										style={styles.cardWrapper}
+									>
 										<LinearGradient
 											colors={card.colors}
 											start={{ x: 0, y: 0 }}
@@ -245,7 +288,10 @@ export default function Cards() {
 														•••• {card.last4}
 													</Text>
 												</View>
-												<CardIcon size={32} color="rgba(255,255,255,0.8)" />
+												<CardIcon
+													size={32}
+													color="rgba(255,255,255,0.8)"
+												/>
 											</View>
 
 											<View style={styles.cardStats}>
@@ -259,7 +305,9 @@ export default function Cards() {
 													<View>
 														<Text style={styles.statLabel}>Limit</Text>
 														<Text style={styles.statValue}>
-															{card.limit ? formatCurrency(card.limit) : "N/A"}
+															{card.limit
+																? formatCurrency(card.limit)
+																: "N/A"}
 														</Text>
 													</View>
 												) : (
@@ -294,34 +342,19 @@ export default function Cards() {
 												)}
 										</LinearGradient>
 
-										{/* <View style={styles.cardInfo}>
-                      <View style={styles.rowBetween}>
-                        <View style={styles.rowCenter}>
-                          <Star size={16} color="#F59E0B" fill="#F59E0B" />
-                          <Text style={styles.rewardsText}>
-                            {"  "}
-                            {card.rewards.points.toLocaleString()} {card.rewards.points === 1 ? 'point' : 'points'}
-                          </Text>
-                        </View>
-                        <View style={styles.rowCenter}>
-                          <Calendar size={16} color="#4B5563" />
-                          <Text style={styles.dueText}>
-                            {"  "}Earned ${card.rewards.cashback}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View style={styles.chipsWrap}>
-                        {card.bestFor.map((category, i) => (
-                          <View
-                            key={`${card.last4}-${category}-${i}`}
-                            style={styles.chip}
-                          >
-                            <Text style={styles.chipText}>Best for {category}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View> */}
+										{/* Delete button bottom-right over card */}
+										<TouchableOpacity
+											style={styles.deleteBtn}
+											onPress={() => confirmDelete(card)}
+											disabled={deletingId === card.id}
+											activeOpacity={0.8}
+										>
+											{deletingId === card.id ? (
+												<ActivityIndicator size="small" color="#FFFFFF" />
+											) : (
+												<Trash2 size={16} color="#FFFFFF" />
+											)}
+										</TouchableOpacity>
 									</View>
 								))}
 							</View>
@@ -345,12 +378,15 @@ export default function Cards() {
 												index <
 												Math.min(
 													3,
-													(spendingInsights?.topCategories?.length || 0) - 1
+													(spendingInsights?.topCategories?.length ||
+														0) - 1
 												) && styles.recRowBorder,
 											]}
 										>
 											<View style={{ flex: 1 }}>
-												<Text style={styles.recCategory}>{item.category}</Text>
+												<Text style={styles.recCategory}>
+													{item.category}
+												</Text>
 												<Text style={styles.recSub}>
 													Earn {item.percentage}% more
 												</Text>
@@ -450,6 +486,12 @@ const styles = StyleSheet.create({
 		borderColor: "#A7F3D0",
 	},
 	plusBtnText: { color: "#0F766E", fontWeight: "600", fontSize: 14 },
+
+	// wrapper to allow absolute delete button
+	cardWrapper: {
+		position: "relative",
+	},
+
 	card: {
 		borderRadius: 20,
 		padding: 20,
@@ -458,6 +500,18 @@ const styles = StyleSheet.create({
 		shadowRadius: 8,
 		marginBottom: 8,
 	},
+	deleteBtn: {
+		position: "absolute",
+		right: 16,
+		bottom: 16,
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: "rgba(255,255,255,0.35)",
+		justifyContent: "center",
+		alignItems: "center",
+	},
+
 	cardTop: {
 		flexDirection: "row",
 		alignItems: "flex-start",

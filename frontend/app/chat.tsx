@@ -17,6 +17,7 @@ import {
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Message = {
   type: 'ai' | 'user';
@@ -31,7 +32,7 @@ interface ChatScreenProps {
 const BACKEND_BASE = 'http://localhost:8000';
 
 // Replace with your actual user id or remove and use Authorization header in production.
-const DEMO_USER_ID = '691e8c0b97b11dbc9a7d4144';
+
 // -----------------------------------
 
 export default function Chat() {
@@ -56,6 +57,9 @@ export default function Chat() {
   const onClose = () => {
     router.push("/")
   };
+
+  const { user } = useAuth();
+  const DEMO_USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
 
   useEffect(() => {
     // Scroll to bottom whenever messages change

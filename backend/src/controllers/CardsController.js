@@ -7,7 +7,7 @@ const Transaction = require("../models/Transaction");
 async function getCardsData(req, res) {
     try {
         const { userId } = req.query;
-        
+
         if (!userId) {
             return res.status(400).json({ error: "User ID is required" });
         }
@@ -38,7 +38,7 @@ async function getCardsData(req, res) {
         recentTransactions.forEach(tx => {
             const amount = Math.abs(tx.amount);
             totalSpent += amount;
-            
+
             tx.category?.forEach(cat => {
                 if (!categorySpending[cat]) {
                     categorySpending[cat] = 0;
@@ -60,8 +60,8 @@ async function getCardsData(req, res) {
         // Format accounts with additional data
         const formattedAccounts = accounts.map(account => {
             // Calculate utilization if it's a credit card
-            const utilization = account.type === 'credit' && account.limit > 0 
-                ? (account.currentBalance / account.limit) * 100 
+            const utilization = account.type === 'credit' && account.limit > 0
+                ? (account.currentBalance / account.limit) * 100
                 : null;
 
             return {
@@ -103,6 +103,48 @@ async function getCardsData(req, res) {
     }
 }
 
+async function deleteCard(req, res) {
+    try {
+        const { userId, cardId } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ success: false, error: "Missing userId" });
+        }
+
+        if (!cardId) {
+            return res.status(400).json({ success: false, error: "Missing cardId" });
+        }
+
+        // Make sure this account belongs to the user
+        const account = await Account.findOne({ _id: cardId, user: userId });
+
+        if (!account) {
+            return res
+                .status(404)
+                .json({ success: false, error: "Card not found for this user" });
+        }
+
+        // Delete all transactions tied to this account (optional but usually desired)
+        await Transaction.deleteMany({ user: userId, account: account._id });
+
+        // Delete the account itself
+        await Account.deleteOne({ _id: account._id });
+
+        return res.json({
+            success: true,
+            message: "Card deleted successfully",
+            deletedAccountId: cardId,
+        });
+    } catch (err) {
+        console.error("deleteCard error:", err);
+        return res
+            .status(500)
+            .json({ success: false, error: "Failed to delete card" });
+    }
+}
+
+
 module.exports = {
-    getCardsData
+    getCardsData,
+    deleteCard
 };

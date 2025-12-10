@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import AIInsightBanner from "../../components/AIInsigntBanner";
 import SpendingByCategory from "../../components/SpendingByCategory";
+import { useAuth } from "@/contexts/AuthContext";
 
 type Props = {
 	onCategorySelect?: (category: string) => void;
@@ -81,8 +82,10 @@ export default function Forecast({
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
+	const { user } = useAuth();
+
 	// TODO: replace with your real values or config
-	const USER_ID = "691e8c0b97b11dbc9a7d4144";
+	const USER_ID = user?.id ?? "691e8c0b97b11dbc9a7d4144";
 	const API_BASE_URL = "http://localhost:8000"; // or from env
 
 	useEffect(() => {

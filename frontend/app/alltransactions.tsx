@@ -15,6 +15,7 @@ import {
     Search
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Transaction {
     id: string;
@@ -45,9 +46,9 @@ export default function AllTransactionsScreen() {
     const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
+    const { user } = useAuth();
     // TODO: replace with your real userId + API base URL
-    const USER_ID = '691e8c0b97b11dbc9a7d4144';
+    const USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
     const API_BASE_URL = 'http://localhost:8000'; // or from env/config
 
     useEffect(() => {
