@@ -7,6 +7,7 @@ import AIInsightBanner from "../../components/AIInsigntBanner";
 import FinanceCard from "../../components/FinanceCard";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "expo-router";
+import { FloatingChatButton } from "@/components/FloatingChatButton";
 
 type HomeData = {
   hasLinkedAccounts: boolean;
@@ -375,7 +376,7 @@ export default function HomeScreen() {
 						<Text style={styles.infoLink}>View Forecast →</Text>
 					</View>
 				</View>
-
+ 				<FloatingChatButton onClick={() => router.push("/chat" as any)} />
 				{/* bottom spacer so content never hides behind the tab bar */}
 				<View style={{ height: 28 }} />
 			</ScrollView>

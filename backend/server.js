@@ -13,6 +13,7 @@ require("dotenv").config();
 
 const authRoutes = require("./src/routes/authRoutes");
 const budgetRoutes = require("./src/routes/budgetRoutes");
+const chatRoutes = require('./src/routes/chatRoutes'); 
 
 //Parse JSON
 app.use(express.json());
@@ -30,6 +31,7 @@ app.use("/api/budgets", budgetRoutes);
 app.use("/api/plaid", plaidRoutes);
 app.use("/api/home", homeRoutes);
 app.use("/api/cards", cardsRoutes);
+app.use('/api/chat', chatRoutes);
 const PORT = process.env.PORT || 8000;
 
 //Connect to MongoDB

@@ -11,7 +11,6 @@ import {
 import {
 	CreditCard as CardIcon,
 	Star,
-	Calendar,
 	Sparkles,
 	Plus,
 } from "lucide-react-native";
@@ -40,11 +39,11 @@ type CardItem = {
 };
 
 type SpendingInsight = {
-	topCategories: Array<{
+	topCategories: {
 		category: string;
 		amount: number;
 		percentage: number;
-	}>;
+	}[];
 	totalSpent: number;
 	startDate: string;
 	endDate: string;
@@ -251,12 +250,16 @@ export default function Cards() {
 														{formatCurrency(card.currentBalance)}
 													</Text>
 												</View>
-												{card.limit ?<View>
-													<Text style={styles.statLabel}>Limit</Text>
-													<Text style={styles.statValue}>
-														{card.limit ? formatCurrency(card.limit) : "N/A"}
-													</Text>
-												</View> : <></>}
+												{card.limit ? (
+													<View>
+														<Text style={styles.statLabel}>Limit</Text>
+														<Text style={styles.statValue}>
+															{card.limit ? formatCurrency(card.limit) : "N/A"}
+														</Text>
+													</View>
+												) : (
+													<></>
+												)}
 											</View>
 
 											{card.utilization !== null &&

@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const AccountSchema = new mongoose.Schema(
 	{
 		user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+		holderName: { type: String }, // Name of the account holder
+		ownerNames: [{ type: String }], // For joint accounts
 		plaidItem: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "PlaidItem",

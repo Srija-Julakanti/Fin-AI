@@ -9,14 +9,16 @@ async function createLinkToken(req, res) {
 		const { userId } = req.body;
 		if (!userId) return res.status(400).json({ error: "Missing userId" });
 		console.log("Creating link token for user:", userId);
+
 		const response = await plaidClient.linkTokenCreate({
 			user: { client_user_id: String(userId) },
 			client_name: "Fin-AI",
-			products: ["transactions"],
+			products: ["transactions", "identity", "auth"],
 			country_codes: ["US"],
 			language: "en",
 		});
-		console.log("Link token created:", response.data, response);
+
+		console.log("Link token created:", response.data);
 		return res.json(response.data);
 	} catch (err) {
 		console.error("createLinkToken error:", err?.response?.data ?? err);
@@ -40,7 +42,7 @@ async function exchangePublicToken(req, res) {
 
 		if (!plaidItem) {
 			plaidItem = await PlaidItem.create({
-				user: userId, // string will be cast to ObjectId if your User._id is ObjectId
+				user: userId,
 				itemId: item_id,
 				accessToken: access_token,
 				institutionId: institution?.institution_id,
@@ -55,18 +57,48 @@ async function exchangePublicToken(req, res) {
 			await plaidItem.save();
 		}
 
+		// 1) Get accounts (balances)
 		const accountsResp = await plaidClient.accountsGet({
 			access_token: access_token,
 		});
 		const accounts = accountsResp.data.accounts;
-		console.log(
-			"Fetched accounts from Plaid:",
-			accounts[0],
-			accounts[1],
-			accounts[2]
-		);
+
+		// 2) Get identity owners / verification_name
+		const infoByAccountId = {};
+		try {
+			const identityResp = await plaidClient.identityGet({
+				access_token: access_token,
+			});
+
+			identityResp.data.accounts.forEach((acc) => {
+				const ownerNames =
+					acc.owners?.flatMap((o) => o.names || [])?.filter(Boolean) || [];
+				const verificationName = acc.verification_name || null;
+
+				infoByAccountId[acc.account_id] = {
+					ownerNames,
+					verificationName,
+				};
+			});
+		} catch (e) {
+			// Identity not available for this FI or product not enabled
+			console.error(
+				"identityGet error (owner/verification name may be empty):",
+				e.response?.data || e
+			);
+		}
+
 		const accountDocs = [];
 		for (const acc of accounts) {
+			const identityInfo = infoByAccountId[acc.account_id] || {};
+			const ownerNames = identityInfo.ownerNames || [];
+			const verificationName = identityInfo.verificationName || null;
+
+			const holderName =
+				ownerNames[0] || // first owner from Identity
+				verificationName || // or verification_name from Auth flows
+				""; // or empty string if nothing
+
 			const doc = await Account.findOneAndUpdate(
 				{
 					user: userId,
@@ -83,9 +115,13 @@ async function exchangePublicToken(req, res) {
 					availableBalance: acc.balances.available,
 					isoCurrencyCode: acc.balances.iso_currency_code,
 					limit: acc.balances.limit,
+					holderName,
+					ownerNames,
+					verificationName,
 				},
 				{ new: true, upsert: true }
 			);
+
 			accountDocs.push(doc);
 		}
 
@@ -100,6 +136,7 @@ async function exchangePublicToken(req, res) {
 	}
 }
 
+// syncTransactions / getTransactions unchanged...
 async function syncTransactions(req, res) {
 	try {
 		const { userId, plaidItemId, start_date, end_date } = req.body;
@@ -113,9 +150,8 @@ async function syncTransactions(req, res) {
 		});
 		if (!item) return res.status(404).json({ error: "Plaid item not found" });
 
-		// ✅ Use a VERY wide default range so sandbox data is always included
-		const today = new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-		const startDate = start_date || "2025-11-01";
+		const today = new Date().toISOString().slice(0, 10);
+		const startDate = start_date || "2025-05-01";
 		const endDate = end_date || today;
 
 		console.log(
