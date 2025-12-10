@@ -4,7 +4,6 @@ const plaidClient = require("../plaidClient");
 const PlaidItem = require("../models/PlaidItem");
 const Account = require("../models/Account");
 const Transaction = require("../models/Transaction");
-const logEvent = require("../../utils/splunk");
 
 // ------------------------------------------------------
 // Simple suspicious transaction checker
@@ -332,38 +331,10 @@ async function getTransactions(req, res) {
 		return res.status(500).json({ error: "Failed to fetch transactions" });
 	}
 }
-async function fetchTransactions(req, res) {
-  try {
-    const { accessToken } = req.body;
 
-    if (!accessToken) {
-      return res.status(400).json({ error: "Missing access token" });
-    }
-
-    const response = await plaidClient.transactionsGet({
-      access_token: accessToken,
-      start_date: "2023-01-01",
-      end_date: new Date().toISOString().slice(0, 10),
-    });
-
-    const transactions = response.data.transactions || [];
-
-    // ⭐ Send to Splunk
-    logEvent("plaid_fetch_transactions", {
-      count: transactions.length,
-      first: transactions[0] || null,
-    });
-
-    return res.status(200).json({ transactions });
-  } catch (error) {
-    logEvent("plaid_fetch_error", { message: error.message });
-    return res.status(500).json({ error: error.message });
-  }
-}
 module.exports = {
   createLinkToken,
   exchangePublicToken,
   syncTransactions,
   getTransactions,
-  fetchTransactions,   // <-- add this line
 };
