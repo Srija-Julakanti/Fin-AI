@@ -28,7 +28,7 @@ interface ChatScreenProps {
   onClose: () => void;
 }
 
-const BACKEND_BASE = 'http://192.168.1.249:8000';
+const BACKEND_BASE = 'http://localhost:8000';
 
 // Replace with your actual user id or remove and use Authorization header in production.
 const DEMO_USER_ID = '691e8c0b97b11dbc9a7d4144';
