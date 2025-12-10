@@ -8,7 +8,6 @@ async function createLinkToken(req, res) {
 	try {
 		const { userId } = req.body;
 		if (!userId) return res.status(400).json({ error: "Missing userId" });
-		console.log("Creating link token for user:", userId);
 
 		const response = await plaidClient.linkTokenCreate({
 			user: { client_user_id: String(userId) },
@@ -18,7 +17,6 @@ async function createLinkToken(req, res) {
 			language: "en",
 		});
 
-		console.log("Link token created:", response.data);
 		return res.json(response.data);
 	} catch (err) {
 		console.error("createLinkToken error:", err?.response?.data ?? err);
@@ -171,18 +169,14 @@ async function syncTransactions(req, res) {
 		});
 
 		const { transactions } = plaidResp.data;
-		console.log("Plaid returned transactions:", transactions.length);
 
 		const plaidAccountIds = [...new Set(transactions.map((t) => t.account_id))];
-		console.log("Unique plaidAccountIds from tx:", plaidAccountIds);
 
 		const accounts = await Account.find({
 			user: userId,
 			plaidItem: item._id,
 			plaidAccountId: { $in: plaidAccountIds },
 		});
-
-		console.log("Matched local accounts:", accounts.length);
 
 		const accountMap = {};
 		accounts.forEach((acc) => {
@@ -214,7 +208,6 @@ async function syncTransactions(req, res) {
 			savedTxs.push(doc);
 		}
 
-		console.log("Saved transactions:", savedTxs.length);
 
 		return res.json({
 			count: savedTxs.length,

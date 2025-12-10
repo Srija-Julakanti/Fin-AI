@@ -86,7 +86,6 @@ export default function Forecast({
 	const API_BASE_URL = "http://localhost:8000"; // or from env
 
 	useEffect(() => {
-		console.log("Fetching forecast for user:", USER_ID);
 		const fetchForecast = async () => {
 			try {
 				setLoading(true);
@@ -95,7 +94,6 @@ export default function Forecast({
 				const res = await fetch(
 					`${API_BASE_URL}/api/forecast?userId=${USER_ID}`
 				);
-				console.log(res);
 				if (!res.ok) {
 					throw new Error(`HTTP ${res.status}`);
 				}

@@ -19,7 +19,6 @@ async function chatHandler(req, res) {
 
       // ✅ IMPORTANT: field is `user`, not `userId`
       const txns = await Transaction.find({ user: userId }).lean();
-      console.log('chatHandler budget intent tx count:', txns.length);
 
       const budgetData = computeBudgetFromTransactions(txns, {
         monthlyIncome,

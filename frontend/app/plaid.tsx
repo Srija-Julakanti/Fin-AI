@@ -45,16 +45,16 @@ export default function PlaidScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <Feather 
-            name="arrow-left" 
-            size={24} 
-            color="#0d9488" 
+          <Feather
+            name="arrow-left"
+            size={24}
+            color="#0d9488"
             onPress={() => router.back()} // Changed to goBack()
             style={styles.backButton}
           />
           <Text style={styles.header}>Link Bank Account</Text>
         </View>
-        
+
         <Text>You must be logged in to link a bank.</Text>
       </View>
     );
@@ -69,7 +69,6 @@ export default function PlaidScreen() {
         { userId }
       );
       const token = resp.data.link_token;
-      console.log("Link token from backend:", resp.data);
       setLinkToken(token);
 
       // Preload Plaid Link with this token
@@ -95,12 +94,10 @@ export default function PlaidScreen() {
       return;
     }
 
-    console.log("Opening Plaid Link with token:", linkToken);
 
     open({
       onSuccess: async (success: LinkSuccess) => {
         try {
-          console.log("Plaid onSuccess:", success);
 
           const publicToken = success.publicToken;
           const institution = success.metadata.institution;
@@ -114,7 +111,6 @@ export default function PlaidScreen() {
             }
           );
 
-          console.log("Exchange response:", resp.data);
 
           setPlaidItemId(resp.data.plaidItemId);
           Alert.alert("Success", "Bank linked!");
@@ -127,7 +123,6 @@ export default function PlaidScreen() {
         }
       },
       onExit: (exit: LinkExit) => {
-        console.log("Plaid onExit:", exit);
         if (exit.error) {
           Alert.alert(
             "Error",
@@ -157,7 +152,6 @@ export default function PlaidScreen() {
         }
       );
 
-      console.log("Transactions sync response:", resp.data);
       setTransactions(JSON.stringify(resp.data.transactions, null, 2));
     } catch (e: any) {
       console.error("fetchTransactions error:", e?.response?.data ?? e);
@@ -170,7 +164,7 @@ export default function PlaidScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => router.back()}
           style={styles.backButton}
         >
@@ -221,8 +215,8 @@ export default function PlaidScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     padding: 20,
     backgroundColor: '#F9FAFB',
   },

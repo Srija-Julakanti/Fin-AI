@@ -99,7 +99,6 @@ function detectRecurringSeries(transactions, { type, primariesFilter }) {
 async function getOrCreateIncomeUserToken(userId) {
 	// 1. Try to find an existing token doc
 	let tokenDoc = await PlaidAccountToken.findOne({ user: userId });
-	console.log("Existing PlaidAccountToken:", tokenDoc);
 	if (tokenDoc) {
 		return tokenDoc.plaidUserToken;
 	}
@@ -110,7 +109,6 @@ async function getOrCreateIncomeUserToken(userId) {
 	});
 
 	const userToken = userCreateResp.data.user_token; // user-sandbox-...
-	console.log("Created new Plaid Income user_token:", userCreateResp);
 
 	// 3. Persist it
 	tokenDoc = await PlaidAccountToken.create({
@@ -126,10 +124,8 @@ async function getOrCreateIncomeUserToken(userId) {
 async function getHomeData(req, res) {
 	try {
 		const userId = req.query.userId || req.body.userId;
-		console.log("getHomeData userId:", userId);
 
 		if (!userId) {
-			console.log("Missing userId");
 			return res.status(400).json({ error: "Missing userId" });
 		}
 
@@ -282,7 +278,6 @@ async function getHomeData(req, res) {
 		let incomeReport = null;
 		try {
 			const userToken = await getOrCreateIncomeUserToken(userId);
-			console.log("Income user_token:", userToken);
 
 			const request = {
 				user_token: userToken,

@@ -16,7 +16,6 @@ async function computeTotals(spendingCategories, savingsCategories) {
 }
 
 async function getBudgetByUser(userId) {
-	console.log(userId);
 	return Budget.findOne({ userId }).lean().exec();
 }
 
