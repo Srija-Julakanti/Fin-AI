@@ -26,8 +26,18 @@ const userSchema = new mongoose.Schema(
 			required: [true, "Password is required"],
 			minlength: [6, "Password must be at least 6 characters long"],
 		},
-	},
-	{ timestamps: true }
+		    // 👉 Add these fields inside the main object
+    failedLoginAttempts: {
+      type: Number,
+      default: 0,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("User", userSchema);
+	
