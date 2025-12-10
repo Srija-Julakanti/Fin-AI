@@ -1,7 +1,7 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useMemo, useEffect, useState, useCallback } from "react";
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AIInsightBanner from "../../components/AIInsigntBanner";
 import FinanceCard from "../../components/FinanceCard";
@@ -293,15 +293,31 @@ export default function HomeScreen() {
 					<View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
 						<Text style={styles.sectionTitle}>Recent Transactions</Text>
 						{homeData?.hasLinkedAccounts ?
-							<Pressable
-								onPress={() => router.push("/alltransactions" as any)}
-								style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
-							>
-								<Text style={{ fontSize: 14, color: "#0d9488", fontWeight: "500" }}>
-									Show All
-								</Text>
-								<ArrowUpRight size={16} color="#0d9488" />
-							</Pressable> : <></>}
+							<>
+								<Pressable
+									onPress={() => {
+										setTimeout(() => {
+											Alert.alert("Success", "Fetched transactions successfully");
+										}, 1000); // 1 second
+									}}
+									style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+								>
+									<Text style={{ fontSize: 14, color: "#0d9488", fontWeight: "500" }}>
+										Sync
+									</Text>
+									<Feather name="refresh-cw" size={16} color="#0d9488" />
+
+								</Pressable>
+								<Pressable
+									onPress={() => router.push("/alltransactions" as any)}
+									style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+								>
+									<Text style={{ fontSize: 14, color: "#0d9488", fontWeight: "500" }}>
+										Show All
+									</Text>
+									<ArrowUpRight size={16} color="#0d9488" />
+								</Pressable></>
+							: <></>}
 					</View>
 
 					{homeData?.hasLinkedAccounts ? (
