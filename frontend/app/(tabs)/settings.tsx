@@ -182,8 +182,8 @@ export default function SettingsScreen() {
 							<Text style={{ fontSize: 28 }}>👩</Text>
 						</View>
 						<View style={{ flex: 1 }}>
-							<Text style={styles.profileName}>{user?.name ?? "User"}</Text>
-							<Text style={styles.profileEmail}>{user?.email ?? "—"}</Text>
+							<Text style={styles.profileName}>{user?.name ?? "Sarah"}</Text>
+							<Text style={styles.profileEmail}>{user?.email ?? "sarah@gmail.com"}</Text>
 						</View>
 					</View>
 

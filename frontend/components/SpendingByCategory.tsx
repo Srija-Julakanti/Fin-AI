@@ -62,7 +62,7 @@ export default function SpendingByCategory({
 			</View>
 
 			<View style={styles.innerRow}>
-				<View style={[styles.pieWrap, { width: pieSize, height: pieSize }]}>
+				<View style={[styles.pieWrap]}>
 					<PieChart
 						data={chartData}
 						width={pieSize}
@@ -121,10 +121,11 @@ const styles = StyleSheet.create({
 	title: { fontSize: 16, fontWeight: "700", color: "#0F172A" },
 	total: { color: "#475569", fontSize: 13 },
 
-	innerRow: { flexDirection: "row", gap: 12 },
+	innerRow: { gap: 12 },
 	pieWrap: {
-		alignItems: "center",
-		justifyContent: "center",
+		//alignItems: "center",
+		//justifyContent: "center",
+		marginLeft: 120,
 	},
 
 	listWrap: {

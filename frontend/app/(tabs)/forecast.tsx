@@ -183,7 +183,13 @@ export default function Forecast({
 								</View>
 								<View style={{ flex: 1 }}>
 									<View style={styles.rowBetween}>
-										<Text style={styles.rowTitle}>{exp.name}</Text>
+										<Text
+											style={styles.rowTitle}
+											numberOfLines={1}
+											ellipsizeMode="tail"
+										>
+											{exp.name}
+										</Text>
 										<Text style={styles.rowAmount}>
 											-${exp.amount.toLocaleString()}
 										</Text>
@@ -415,8 +421,17 @@ const styles = StyleSheet.create({
 		justifyContent: "center",
 		marginRight: 12,
 	},
-	rowTitle: { fontWeight: "700", color: "#0F172A" },
-	rowAmount: { fontWeight: "800", color: "#0F172A" },
+	rowTitle: {
+		flex: 1,
+		fontWeight: "700",
+		color: "#0F172A",
+		marginRight: 8,       // space before the amount
+	},
+	rowAmount: {
+		fontWeight: "800",
+		color: "#0F172A",
+		flexShrink: 0,        // don't let the amount get squished
+	},
 	smallRow: { flexDirection: "row", alignItems: "center", marginTop: 6 },
 	smallMeta: { color: "#6B7280", fontSize: 12 },
 	dotSep: { width: 6 },
