@@ -64,11 +64,12 @@ export default function Cards() {
 
 	const fetchCardsData = async () => {
 		try {
-			if (!user?.id) return;
+
+			const USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
 
 			setLoading(true);
 			const response = await axios.get(`${API_BASE_URL}/cards`, {
-				params: { userId: user.id },
+				params: { userId: USER_ID },
 			});
 
 			if (response.data.success) {
@@ -166,10 +167,10 @@ export default function Cards() {
 
 		try {
 			setDeletingId(card.id);
-
+			const USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
 			// Adjust this endpoint/body if your backend uses a different route
 			await axios.post(`${API_BASE_URL}/cards/delete`, {
-				userId: user.id,
+				userId: USER_ID,
 				cardId: card.id,
 			});
 

@@ -40,7 +40,7 @@ export default function HomeScreen() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const fetchHomeData = async () => {
-		let USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
+		let USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
 
 		try {
 			setLoading(true);
@@ -186,14 +186,14 @@ export default function HomeScreen() {
 					<Text style={styles.totalValue}>
 						{homeData?.hasLinkedAccounts ? formatCurrency(homeData.totalBalance) : '---'}
 					</Text>
-					{homeData?.monthlyDelta !== undefined && (
+					{homeData?.hasLinkedAccounts && homeData.monthlyDelta ?
 						<Text style={[
 							styles.totalDelta,
 							{ color: homeData.monthlyDelta >= 0 ? "#22c55e" : "#ef4444" }
 						]}>
 							{homeData.monthlyDelta >= 0 ? '+' : ''}{formatCurrency(homeData.monthlyDelta)} this month
 						</Text>
-					)}
+						: <></>}
 				</View>
 
 				{/* Income / Expenses grid */}
@@ -206,7 +206,7 @@ export default function HomeScreen() {
 							icon={<Feather name="briefcase" size={20} color="#0d9488" />}
 							trend={homeData?.monthlyDeltaPercentage && homeData.monthlyDeltaPercentage >= 0 ? "up" : "down"}
 							trendValue={
-								homeData?.monthlyDeltaPercentage !== undefined
+								homeData?.hasLinkedAccounts && homeData.monthlyDeltaPercentage
 									? `${homeData.monthlyDeltaPercentage >= 0 ? '+' : ''}${homeData.monthlyDeltaPercentage}%`
 									: ''
 							}
@@ -220,7 +220,7 @@ export default function HomeScreen() {
 							icon={<Feather name="calendar" size={20} color="#0d9488" />}
 							trend={homeData?.monthlyDeltaPercentage && homeData.monthlyDeltaPercentage < 0 ? "up" : "down"}
 							trendValue={
-								homeData?.monthlyDeltaPercentage !== undefined
+								homeData?.hasLinkedAccounts && homeData.monthlyDeltaPercentage
 									? `${homeData.monthlyDeltaPercentage < 0 ? '+' : ''}${-homeData.monthlyDeltaPercentage}%`
 									: ''
 							}

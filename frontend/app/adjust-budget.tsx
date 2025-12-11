@@ -28,12 +28,12 @@ import {
 } from "lucide-react-native";
 import { router } from "expo-router";
 import { SavingsCategory, SpendingCategory } from "@/enums/categories";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * CONFIG - update these for your environment
  */
 const API_BASE = "http://localhost:8000";
-const USER_ID = "690ac6f4ad0e62aac1010274";
 const CATEGORY_CONFIG: Record<string, { icon?: any; color?: string }> = {
 	[SpendingCategory.Housing]: { icon: Home, color: "#3B82F6" },
 	[SpendingCategory.Transportation]: { icon: Car, color: "#6366F1" },
@@ -71,6 +71,7 @@ export default function AdjustSavingsPlanScreen({ onBack }: Props) {
 		[SpendingCategory.Healthcare]: "0",
 		[SpendingCategory.Subscriptions]: "0",
 	};
+	const { user } = useAuth();
 
 	const initialSavings: SavingsState = {
 		[SavingsCategory.EmergencyFund]: "0",
@@ -146,6 +147,8 @@ export default function AdjustSavingsPlanScreen({ onBack }: Props) {
 		);
 	}, [savingsAmounts]);
 
+	const USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
+
 	// fetch latest income + budget if present
 	useEffect(() => {
 		let mounted = true;
@@ -158,6 +161,7 @@ export default function AdjustSavingsPlanScreen({ onBack }: Props) {
 					const incomeRes = await fetch(`${API_BASE}/api/income/${USER_ID}`);
 					if (incomeRes.ok) {
 						const json = await incomeRes.json();
+						console.log("income fetch response", json);
 						if (json?.ok && json.data?.amount && mounted) {
 							setMonthlyIncomeState(Number(json.data.amount));
 						}
@@ -481,8 +485,8 @@ export default function AdjustSavingsPlanScreen({ onBack }: Props) {
 							totalBudget > monthlyIncomeState
 								? styles.summaryRed
 								: isValid && totalBudget === monthlyIncomeState
-								? styles.summaryGreen
-								: styles.summaryAmber,
+									? styles.summaryGreen
+									: styles.summaryAmber,
 						]}
 					>
 						<Text style={styles.cardTitle}>Budget Summary</Text>
@@ -531,8 +535,8 @@ export default function AdjustSavingsPlanScreen({ onBack }: Props) {
 										totalBudget > monthlyIncomeState
 											? { color: "#DC2626" }
 											: isValid && totalBudget === monthlyIncomeState
-											? { color: "#059669" }
-											: { color: "#D97706" },
+												? { color: "#059669" }
+												: { color: "#D97706" },
 									]}
 								>
 									${totalBudget.toLocaleString()}
@@ -578,23 +582,23 @@ export default function AdjustSavingsPlanScreen({ onBack }: Props) {
 						style={[
 							styles.saveBtn,
 							(!isValid || totalBudget === 0 || saving) &&
-								styles.saveBtnDisabled,
+							styles.saveBtnDisabled,
 						]}
 					>
 						<Text
 							style={[
 								styles.saveBtnText,
 								(!isValid || totalBudget === 0 || saving) &&
-									styles.saveBtnTextDisabled,
+								styles.saveBtnTextDisabled,
 							]}
 						>
 							{saving
 								? "Saving..."
 								: !isValid || totalBudget > monthlyIncomeState
-								? "Adjust Budget to Save"
-								: totalBudget === 0
-								? "Enter Amounts to Create Budget"
-								: "Save Budget Plan"}
+									? "Adjust Budget to Save"
+									: totalBudget === 0
+										? "Enter Amounts to Create Budget"
+										: "Save Budget Plan"}
 						</Text>
 					</TouchableOpacity>
 				</View>

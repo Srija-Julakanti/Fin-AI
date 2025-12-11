@@ -50,7 +50,8 @@ export default function SettingsScreen() {
 
 	const handleDeleteData = async () => {
 		try {
-			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-data`, { userId: '6939cd4bf2714dcb53f43c56' })
+			let USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
+			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-data`, { userId: USER_ID })
 			if (res.status != 200) {
 				const text = await res.data.message;
 				throw new Error(text || "Failed to delete data");
@@ -81,7 +82,8 @@ export default function SettingsScreen() {
 
 	const handleDeleteAccount = async () => {
 		try {
-			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-account`, { userId: '6939cd4bf2714dcb53f43c56' })
+			let USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
+			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-account`, { userId: USER_ID })
 			if (res.status != 200) {
 				const text = await res.data.message;
 				throw new Error(text || "Failed to delete account");
@@ -125,7 +127,7 @@ export default function SettingsScreen() {
 				{
 					icon: "credit-card",
 					label: "Linked Accounts",
-					value: "4 banks connected",
+					value: "12 banks connected",
 				},
 				{ icon: "bell", label: "Notifications", value: "Enabled" },
 			],
@@ -182,8 +184,8 @@ export default function SettingsScreen() {
 							<Text style={{ fontSize: 28 }}>👩</Text>
 						</View>
 						<View style={{ flex: 1 }}>
-							<Text style={styles.profileName}>{user?.name ?? "Sarah"}</Text>
-							<Text style={styles.profileEmail}>{user?.email ?? "sarah@gmail.com"}</Text>
+							<Text style={styles.profileName}>{user?.name ?? "Sarah T"}</Text>
+							<Text style={styles.profileEmail}>{user?.email ?? "saraht@gmail.com"}</Text>
 						</View>
 					</View>
 

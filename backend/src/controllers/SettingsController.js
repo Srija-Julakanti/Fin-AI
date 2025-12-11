@@ -12,6 +12,8 @@ const deleteData = async (req, res) => {
         await Account.deleteMany({ user: userId });
         await Transaction.deleteMany({ user: userId });
         await PlaidAccountToken.deleteMany({ user: userId });
+        console.log("Data deleted successfully");
+        console.log("User ID: ", userId);
         res.status(200).json({ message: "Data deleted successfully" });
     } catch (error) {
         res.status(400).json({ error: error.message });

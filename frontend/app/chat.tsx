@@ -59,7 +59,7 @@ export default function Chat() {
   };
 
   const { user } = useAuth();
-  const DEMO_USER_ID = user?.id ?? '691e8c0b97b11dbc9a7d4144';
+  const DEMO_USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
 
   useEffect(() => {
     // Scroll to bottom whenever messages change
@@ -72,7 +72,7 @@ export default function Chat() {
   async function postToChatBackend(userId: string | null, userMessage: string) {
     const url = `${BACKEND_BASE}/api/chat`;
     const body: any = { message: userMessage };
-    if (userId) body.userId = userId;
+    body.userId = user?.id ?? '693a0451e654cdaccbb42d26';;
 
     // If you have other info (monthlyIncome etc) include here:
     // body.monthlyIncome = 4500;

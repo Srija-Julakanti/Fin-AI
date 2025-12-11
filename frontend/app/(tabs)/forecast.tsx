@@ -85,7 +85,7 @@ export default function Forecast({
 	const { user } = useAuth();
 
 	// TODO: replace with your real values or config
-	const USER_ID = user?.id ?? "691e8c0b97b11dbc9a7d4144";
+	const USER_ID = user?.id ?? "693a0451e654cdaccbb42d26";
 	const API_BASE_URL = "http://localhost:8000"; // or from env
 
 	useEffect(() => {

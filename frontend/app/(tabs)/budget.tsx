@@ -77,22 +77,22 @@ export default function Budget({ onBack }: { onBack?: () => void }) {
 			trend: "down",
 			trendValue: "12%",
 		},
-		{
-			name: "Emma",
-			avatar: "👧",
-			spending: 145.2,
-			income: 0,
-			trend: "up",
-			trendValue: "5%",
-		},
-		{
-			name: "Luke",
-			avatar: "👦",
-			spending: 89.4,
-			income: 0,
-			trend: "down",
-			trendValue: "3%",
-		},
+		// {
+		// 	name: "Emma",
+		// 	avatar: "👧",
+		// 	spending: 145.2,
+		// 	income: 0,
+		// 	trend: "up",
+		// 	trendValue: "5%",
+		// },
+		// {
+		// 	name: "Luke",
+		// 	avatar: "👦",
+		// 	spending: 89.4,
+		// 	income: 0,
+		// 	trend: "down",
+		// 	trendValue: "3%",
+		// },
 	];
 
 	const budgetGoals: BudgetGoal[] = [
