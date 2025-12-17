@@ -274,3 +274,177 @@ const styles = StyleSheet.create({
 	features: { gap: 4 },
 	featureLine: { color: "white", opacity: 0.95 },
 });
+//------------------------------------------------------//
+
+// import React, { useState, useCallback } from "react";
+// import {
+//   View,
+//   Text,
+//   Button,
+//   Alert,
+//   ScrollView,
+//   StyleSheet,
+// } from "react-native";
+// import {
+//   create,
+//   open,
+//   dismissLink,
+//   usePlaidEmitter,
+//   LinkOpenProps,
+//   LinkSuccess,
+//   LinkExit,
+//   LinkLogLevel,
+//   LinkIOSPresentationStyle,
+// } from "react-native-plaid-link-sdk";
+// import axios from "axios";
+// import { useRouter } from "expo-router";
+
+// const API_BASE_URL = "http://10.0.2.2:3333"; // Your backend
+
+// export default function PlaidIntegrationScreen() {
+//   const router = useRouter();
+
+//   const [linkToken, setLinkToken] = useState<string | null>(null);
+//   const [accessToken, setAccessToken] = useState<string | null>(null);
+//   const [transactions, setTransactions] = useState<string>(
+//     "No transactions fetched."
+//   );
+
+//   // --- 1. Create Link Token ---
+//   const createLinkToken = useCallback(async () => {
+//     try {
+//       const resp = await axios.post(`${API_BASE_URL}/create_link_token`);
+//       const lt = resp.data.link_token;
+//       setLinkToken(lt);
+
+//       // Preload Link UI for better performance
+//       create({ token: lt, noLoadingState: false });
+//     } catch (error) {
+//       console.error("Error creating link token", error);
+//       Alert.alert("Error", "Could not get Plaid link token.");
+//     }
+//   }, []);
+
+//   // --- 2. Exchange Public Token for Access Token ---
+//   const exchangePublicToken = useCallback(
+//     async (publicToken: string) => {
+//       try {
+//         const resp = await axios.post(`${API_BASE_URL}/get_access_token`, {
+//           publicToken,
+//         });
+//         const token = resp.data.accessToken;
+//         setAccessToken(token);
+//         Alert.alert("Success", "Bank account linked!");
+//       } catch (error) {
+//         console.error("Error exchanging public token", error);
+//         Alert.alert("Error", "Could not exchange public token.");
+//       }
+//     },
+//     []
+//   );
+
+//   // --- 3. Fetch Transactions ---
+//   const fetchTransactions = useCallback(async () => {
+//     if (!accessToken) {
+//       Alert.alert("Error", "You must link an account first.");
+//       return;
+//     }
+//     try {
+//       const resp = await axios.post(`${API_BASE_URL}/get_transactions`, {
+//         token: accessToken,
+//       });
+//       setTransactions(JSON.stringify(resp.data.transactions, null, 2));
+//     } catch (error) {
+//       console.error("Error fetching transactions", error);
+//       setTransactions("Error fetching transactions.");
+//     }
+//   }, [accessToken]);
+
+//   // --- 4. Plaid Event Listener (Optional) ---
+//   usePlaidEmitter((event) => {
+//     console.log("Plaid event:", event);
+//   });
+
+//   // --- 5. Open Plaid Link ---
+//   const handleOpen = useCallback(() => {
+//     if (!linkToken) {
+//       Alert.alert("Error", "Link token is not set. Generate it first.");
+//       return;
+//     }
+
+//     const openProps: LinkOpenProps = {
+//       onSuccess: (success: LinkSuccess) => {
+//         exchangePublicToken(success.publicToken);
+//       },
+//       onExit: (exit: LinkExit) => {
+//         if (exit.error) {
+//           console.error("Link exit error", exit.error);
+//           Alert.alert(
+//             "Link Exit",
+//             exit.error.displayMessage ?? exit.error.errorType ?? "Unknown error"
+//           );
+//         }
+//         dismissLink();
+//       },
+//       logLevel: LinkLogLevel.ERROR,
+//       iOSPresentationStyle: LinkIOSPresentationStyle.MODAL,
+//     };
+
+//     open(openProps);
+//   }, [linkToken, exchangePublicToken]);
+
+//   // --- 6. Example Navigation Button ---
+//   const goBackHome = () => {
+//     router.push("/"); // navigate to home or any route
+//   };
+
+//   return (
+//     <View style={styles.container}>
+//       <Text style={styles.header}>Plaid Integration (SDK 12.7.0)</Text>
+
+//       <Button title="1. Create Link Token" onPress={createLinkToken} />
+//       <Text style={styles.status}>
+//         Link Token: {linkToken ? "✅ Ready" : "❌ Not Ready"}
+//       </Text>
+
+//       <Button title="2. Open Plaid Link" onPress={handleOpen} disabled={!linkToken} />
+
+//       <View style={styles.separator} />
+
+//       <Button
+//         title="3. Fetch Transactions"
+//         onPress={fetchTransactions}
+//         disabled={!accessToken}
+//       />
+//       <Text style={styles.status}>
+//         Access Token: {accessToken ? "✅ Set" : "❌ Not Set"}
+//       </Text>
+
+//       <View style={styles.separator} />
+
+//       <Button title="Go Home" onPress={goBackHome} color="#2563eb" />
+
+//       <Text style={styles.transactionsHeader}>Transactions:</Text>
+//       <ScrollView style={styles.transactionsContainer}>
+//         <Text style={styles.transactionsText}>{transactions}</Text>
+//       </ScrollView>
+//     </View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, padding: 20, backgroundColor: "#F5F5F5" },
+//   header: { fontSize: 24, fontWeight: "700", marginBottom: 30, textAlign: "center" },
+//   status: { marginVertical: 10, textAlign: "center", color: "#333" },
+//   separator: { height: 1, backgroundColor: "#ccc", marginVertical: 20 },
+//   transactionsHeader: { fontSize: 18, fontWeight: "600", marginBottom: 10 },
+//   transactionsContainer: {
+//     flex: 1,
+//     backgroundColor: "#FFF",
+//     padding: 10,
+//     borderRadius: 8,
+//     borderWidth: 1,
+//     borderColor: "#DDD",
+//   },
+//   transactionsText: { fontSize: 12, fontFamily: "Courier" },
+// });

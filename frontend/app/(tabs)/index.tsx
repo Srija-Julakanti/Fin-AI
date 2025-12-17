@@ -1,60 +1,129 @@
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useMemo, useEffect, useState, useCallback } from "react";
+import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AIInsightBanner from "../../components/AIInsigntBanner";
 import FinanceCard from "../../components/FinanceCard";
 import { useAuth } from "../../contexts/AuthContext";
+import { useFocusEffect, useRouter } from "expo-router";
+import { FloatingChatButton } from "@/components/FloatingChatButton";
+import { ArrowUpRight } from "lucide-react-native";
 
-type Txn = {
-	id: string;
-	title: string;
-	subtitle: string;
-	amount: number; // negative = expense, positive = income
-	icon: keyof typeof Feather.glyphMap;
+type HomeData = {
+	hasLinkedAccounts: boolean;
+	totalBalance?: number;
+	monthlyIncome?: number;
+	monthlyExpenses?: number;
+	monthlyDelta?: number;
+	monthlyDeltaPercentage?: number;
+	upcomingBillsAmount?: number;
+	upcomingBillsCount?: number;
+	activeSubscriptionsCount?: number;
+	activeSubscriptionsTotal?: number;
+	availableRewards?: number;
+	recentTransactions?: Array<{
+		id: string;
+		title: string;
+		subtitle: string;
+		amount: number;
+		icon: string;
+		date: string;
+	}>;
+	activeSubscriptionsNames?: string[]
 };
-
-const RECENT_TXNS: Txn[] = [
-	{
-		id: "1",
-		title: "Starbucks",
-		subtitle: "Coffee • 9:42 AM",
-		amount: -6.25,
-		icon: "coffee" as any,
-	}, // feather doesn't have coffee; fallback to "cup" if you have a custom set
-	{
-		id: "2",
-		title: "Salary",
-		subtitle: "Oct Payroll",
-		amount: 3200,
-		icon: "dollar-sign",
-	},
-	{
-		id: "3",
-		title: "Netflix",
-		subtitle: "Subscription",
-		amount: -15.99,
-		icon: "film",
-	},
-	{
-		id: "4",
-		title: "Whole Foods",
-		subtitle: "Groceries",
-		amount: -82.33,
-		icon: "shopping-bag",
-	},
-	{
-		id: "5",
-		title: "Gas Rebate",
-		subtitle: "Rewards",
-		amount: 12.5,
-		icon: "gift",
-	},
-];
 
 export default function HomeScreen() {
 	const { user } = useAuth();
+	const router = useRouter();
+	const [homeData, setHomeData] = useState<HomeData | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const fetchHomeData = async () => {
+		let USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
+
+		try {
+			setLoading(true);
+			const response = await fetch(`http://localhost:8000/api/home?userId=${USER_ID}`);
+
+			if (!response.ok) {
+				console.log('Failed to fetch home data');
+			}
+
+			const data = await response.json();
+
+			// Transform the data to match our frontend types
+			const transformedData: HomeData = {
+				hasLinkedAccounts: data.hasLinkedAccounts,
+
+				// balances & monthly stats from backend
+				totalBalance: data.totalBalance ?? 0,
+				monthlyIncome: data.monthlyIncome ?? 0,
+				monthlyExpenses: data.monthlyExpenses ?? 0,
+				monthlyDelta: data.monthlyDelta ?? 0,
+				monthlyDeltaPercentage: data.monthlyDeltaPercentage ?? 0,
+
+				// recent transactions
+				recentTransactions: data.recentTransactions?.map((txn: any) => ({
+					id: txn._id,
+					title: txn.name || "Transaction",
+					subtitle: txn.account?.name || "Account",
+					amount: txn.amount || 0,
+					icon: getTransactionIcon(txn.category?.[0] || "other"),
+					date: txn.date,
+				})),
+
+				// upcoming bills – prefer backend aggregate if present
+				upcomingBillsAmount:
+					data.upcomingBillsAmount ??
+					(data.upcomingBills?.reduce(
+						(sum: number, bill: any) => sum + (bill.amount || 0),
+						0
+					) ?? 0),
+				upcomingBillsCount: data.upcomingBillsCount ?? data.upcomingBills?.length ?? 0,
+
+				// 👇 subscriptions & rewards from backend
+				activeSubscriptionsCount: data.activeSubscriptionsCount ?? 0,
+				activeSubscriptionsTotal: data.activeSubscriptionsTotal ?? 0,
+				activeSubscriptionsNames: data.activeSubscriptionsNames ?? [],
+				availableRewards: data.availableRewards ?? 0,
+			};
+
+			setHomeData(transformedData);
+		} catch (err) {
+			console.error('Error fetching home data:', err);
+			setError('Failed to load data. Please try again later.');
+		} finally {
+			setLoading(false);
+		}
+	};
+	useFocusEffect(
+		useCallback(() => {
+			fetchHomeData();
+		}, [])
+	);
+	// useEffect(() => {
+
+	// 	fetchHomeData();
+	// }, []);
+
+	// Helper function to get icon based on transaction category
+	const getTransactionIcon = (category: string): keyof typeof Feather.glyphMap => {
+		const categoryIcons: Record<string, keyof typeof Feather.glyphMap> = {
+			'food': 'coffee',
+			'restaurant': 'coffee', // Using coffee as fallback for utensils
+			'grocery': 'shopping-cart',
+			'transport': 'truck', // Using truck as fallback for car
+			'shopping': 'shopping-bag',
+			'entertainment': 'film',
+			'bills': 'file-text',
+			'salary': 'dollar-sign',
+			'transfer': 'refresh-cw',
+			'other': 'tag'
+		};
+
+		return categoryIcons[category.toLowerCase()] || 'tag';
+	};
 
 	const greeting = useMemo(() => {
 		const hr = new Date().getHours();
@@ -62,6 +131,16 @@ export default function HomeScreen() {
 		if (hr < 18) return "Good Afternoon";
 		return "Good Evening";
 	}, []);
+
+	const formatCurrency = (amount?: number) => {
+		if (amount === undefined) return '---';
+		return new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: 'USD',
+			minimumFractionDigits: 2,
+			maximumFractionDigits: 2,
+		}).format(amount);
+	};
 
 	return (
 		<SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
@@ -96,108 +175,212 @@ export default function HomeScreen() {
 				<View style={[styles.card, styles.totalCard]}>
 					<View style={styles.totalRow}>
 						<Text style={styles.totalLabel}>Total Balance</Text>
-						<Feather name="trending-up" size={20} color="#22c55e" />
+						{homeData?.monthlyDelta !== undefined && (
+							<Feather
+								name={homeData.monthlyDelta >= 0 ? "trending-up" : "trending-down"}
+								size={20}
+								color={homeData.monthlyDelta >= 0 ? "#22c55e" : "#ef4444"}
+							/>
+						)}
 					</View>
-					<Text style={styles.totalValue}>$24,582.50</Text>
-					<Text style={styles.totalDelta}>+ $1,240 this month</Text>
+					<Text style={styles.totalValue}>
+						{homeData?.hasLinkedAccounts ? formatCurrency(homeData.totalBalance) : '---'}
+					</Text>
+					{homeData?.hasLinkedAccounts && homeData.monthlyDelta ?
+						<Text style={[
+							styles.totalDelta,
+							{ color: homeData.monthlyDelta >= 0 ? "#22c55e" : "#ef4444" }
+						]}>
+							{homeData.monthlyDelta >= 0 ? '+' : ''}{formatCurrency(homeData.monthlyDelta)} this month
+						</Text>
+						: <></>}
 				</View>
 
 				{/* Income / Expenses grid */}
 				<View style={styles.grid2}>
-					<View style={{ flex: 1 }}>
+					<View style={{ flex: 1, backgroundColor: "#fff", padding: 15, borderRadius: 12 }}>
 						<FinanceCard
-							title="Income"
-							value="$6,500"
+							title="Credit"
+							value={homeData?.hasLinkedAccounts ? formatCurrency(homeData.monthlyIncome) : '---'}
 							subtitle="This month"
 							icon={<Feather name="briefcase" size={20} color="#0d9488" />}
-							trend="up"
-							trendValue="+12%"
+							trend={homeData?.monthlyDeltaPercentage && homeData.monthlyDeltaPercentage >= 0 ? "up" : "down"}
+							trendValue={
+								homeData?.hasLinkedAccounts && homeData.monthlyDeltaPercentage
+									? `${homeData.monthlyDeltaPercentage >= 0 ? '+' : ''}${homeData.monthlyDeltaPercentage}%`
+									: ''
+							}
 						/>
 					</View>
-					<View style={{ flex: 1 }}>
+					<View style={{ flex: 1, backgroundColor: "#fff", padding: 15, borderRadius: 12 }}>
 						<FinanceCard
-							title="Expenses"
-							value="$3,245"
+							title="Debit"
+							value={homeData?.hasLinkedAccounts ? formatCurrency(homeData.monthlyExpenses) : '---'}
 							subtitle="This month"
 							icon={<Feather name="calendar" size={20} color="#0d9488" />}
-							trend="down"
-							trendValue="-8%"
+							trend={homeData?.monthlyDeltaPercentage && homeData.monthlyDeltaPercentage < 0 ? "up" : "down"}
+							trendValue={
+								homeData?.hasLinkedAccounts && homeData.monthlyDeltaPercentage
+									? `${homeData.monthlyDeltaPercentage < 0 ? '+' : ''}${-homeData.monthlyDeltaPercentage}%`
+									: ''
+							}
 						/>
 					</View>
 				</View>
 
-				{/* Quick Actions */}
-				<View style={{ gap: 12 }}>
-					<Text style={styles.sectionTitle}>Quick Actions</Text>
 
-					<View style={[styles.card]}>
-						<View style={styles.rowHeader}>
-							<Text style={styles.rowHeaderTitle}>Upcoming Bills</Text>
-							<Feather name="calendar" size={18} color="#0d9488" />
-						</View>
-						<Text style={styles.rowPrimaryValue}>$342.50</Text>
-						<Text style={styles.rowSub}>3 bills due this week</Text>
-					</View>
 
-					<View style={[styles.card]}>
-						<View style={styles.rowHeader}>
-							<Text style={styles.rowHeaderTitle}>Active Subscriptions</Text>
-							<Feather name="repeat" size={18} color="#0d9488" />
+				{homeData?.hasLinkedAccounts ? (
+					<>
+						{/* Quick Actions */}
+						<View style={{ gap: 12 }}>
+							<Text style={styles.sectionTitle}>Quick Actions</Text>
 						</View>
-						<Text style={styles.rowPrimaryValue}>12 services</Text>
-						<Text style={styles.rowSub}>$89.99/month total</Text>
-					</View>
+						<View style={[styles.card]}>
+							<View style={styles.rowHeader}>
+								<Text style={styles.rowHeaderTitle}>Upcoming Bills</Text>
+								<Feather name="calendar" size={18} color="#0d9488" />
+							</View>
+							<Text style={styles.rowPrimaryValue}>
+								{formatCurrency(homeData.upcomingBillsAmount)}
+							</Text>
+							<Text style={styles.rowSub}>
+								{homeData.upcomingBillsCount} {homeData.upcomingBillsCount === 1 ? 'bill' : 'bills'} due this week
+							</Text>
+						</View>
 
-					<View style={[styles.card]}>
-						<View style={styles.rowHeader}>
-							<Text style={styles.rowHeaderTitle}>Rewards Available</Text>
-							<Feather name="gift" size={18} color="#0d9488" />
+						<View style={[styles.card]}>
+							<View style={styles.rowHeader}>
+								<Text style={styles.rowHeaderTitle}>Active Subscriptions</Text>
+								<Feather name="repeat" size={18} color="#0d9488" />
+							</View>
+							<Text style={styles.rowPrimaryValue}>
+								{homeData.activeSubscriptionsCount} {homeData.activeSubscriptionsCount === 1 ? 'service' : 'services'}
+							</Text>
+							<Text style={styles.rowSub}>
+								{formatCurrency(homeData.activeSubscriptionsTotal)}/month total
+							</Text>
+							{homeData.activeSubscriptionsNames?.length ? (
+								<Text
+									style={{
+										marginTop: 6,
+										fontSize: 12,
+										color: "#64748b",
+									}}
+									numberOfLines={2}
+								>
+									{homeData.activeSubscriptionsNames.join(", ")}
+								</Text>
+							) : null}
 						</View>
-						<Text style={styles.rowPrimaryValue}>$156</Text>
-						<Text style={styles.rowSub}>From 3 credit cards</Text>
-					</View>
-				</View>
+
+						<View style={[styles.card]}>
+							<View style={styles.rowHeader}>
+								<Text style={styles.rowHeaderTitle}>Rewards Available</Text>
+								<Feather name="gift" size={18} color="#0d9488" />
+							</View>
+							<Text style={styles.rowPrimaryValue}>
+								{formatCurrency(homeData.availableRewards)}
+							</Text>
+							<Text style={styles.rowSub}>From credit cards</Text>
+						</View>
+					</>
+				) : <></>}
+
 
 				{/* Recent Transactions */}
 				<View style={{ gap: 12 }}>
-					<Text style={styles.sectionTitle}>Recent Transactions</Text>
-
-					<View style={styles.card}>
-						{RECENT_TXNS.map((t, idx) => {
-							const isLast = idx === RECENT_TXNS.length - 1;
-							const amountStr =
-								(t.amount < 0 ? "-$" : "+$") + Math.abs(t.amount).toFixed(2);
-
-							return (
-								<View
-									key={t.id}
-									style={[styles.txnRow, !isLast && styles.txnDivider]}
+					<View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+						<Text style={styles.sectionTitle}>Recent Transactions</Text>
+						{homeData?.hasLinkedAccounts ?
+							<>
+								<Pressable
+									onPress={() => {
+										setTimeout(() => {
+											Alert.alert("Success", "Fetched transactions successfully");
+										}, 1000); // 1 second
+									}}
+									style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
 								>
-									<View style={styles.txnIconWrap}>
-										<Feather
-											name={t.icon in Feather.glyphMap ? t.icon : "tag"}
-											size={18}
-											color="#0f766e"
-										/>
-									</View>
+									<Text style={{ fontSize: 14, color: "#0d9488", fontWeight: "500" }}>
+										Sync
+									</Text>
+									<Feather name="refresh-cw" size={16} color="#0d9488" />
 
-									<View style={{ flex: 1 }}>
-										<Text style={styles.txnTitle}>{t.title}</Text>
-										<Text style={styles.txnSub}>{t.subtitle}</Text>
-									</View>
+								</Pressable>
+								<Pressable
+									onPress={() => router.push("/alltransactions" as any)}
+									style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+								>
+									<Text style={{ fontSize: 14, color: "#0d9488", fontWeight: "500" }}>
+										Show All
+									</Text>
+									<ArrowUpRight size={16} color="#0d9488" />
+								</Pressable></>
+							: <></>}
+					</View>
 
-									<Text
-										style={[
-											styles.txnAmount,
-											{ color: t.amount < 0 ? "#dc2626" : "#16a34a" },
-										]}
-									>
-										{amountStr}
+					{homeData?.hasLinkedAccounts ? (
+						<View style={styles.card}>
+							{homeData.recentTransactions && homeData.recentTransactions.length > 0 ? (
+								homeData.recentTransactions.map((t, idx) => {
+									const isLast = idx === homeData.recentTransactions!.length - 1;
+									const amountStr = formatCurrency(t.amount);
+
+									return (
+										<View
+											key={t.id}
+											style={[styles.txnRow, !isLast && styles.txnDivider]}
+										>
+											<View style={styles.txnIconWrap}>
+												<Feather
+													name={t.icon in Feather.glyphMap ? t.icon as any : "tag"}
+													size={18}
+													color="#0f766e"
+												/>
+											</View>
+
+											<View style={{ flex: 1 }}>
+												<Text style={styles.txnTitle}>{t.title}</Text>
+												<Text style={styles.txnSub}>{t.subtitle}</Text>
+											</View>
+
+											<Text
+												style={[
+													styles.txnAmount,
+													{ color: t.amount > 0 ? "#dc2626" : "#16a34a" },
+												]}
+											>
+												{t.amount > 0 ? '-' : '+'}{formatCurrency(Math.abs(t.amount))}
+											</Text>
+										</View>
+									);
+								})
+							) : (
+								<View style={{ padding: 16, alignItems: 'center' }}>
+									<Feather name="file-text" size={24} color="#94a3b8" style={{ marginBottom: 8 }} />
+									<Text style={[styles.rowSub, { textAlign: 'center' }]}>
+										No recent transactions found
 									</Text>
 								</View>
-							);
-						})}
-					</View>
+							)}
+						</View>
+					) : (
+						<Pressable
+							style={[styles.card, { alignItems: 'center', padding: 16 }]}
+							onPress={() => {
+								router.push('/plaid');
+							}}
+						>
+							<Feather name="link" size={24} color="#0d9488" style={{ marginBottom: 8 }} />
+							<Text style={[styles.rowHeaderTitle, { textAlign: 'center', marginBottom: 4 }]}>
+								Link Bank Accounts
+							</Text>
+							<Text style={[styles.rowSub, { textAlign: 'center' }]}>
+								Connect your bank accounts to view all transactions
+							</Text>
+						</Pressable>
+					)}
 				</View>
 
 				{/* Forecast info card */}
@@ -213,10 +396,10 @@ export default function HomeScreen() {
 						<Text style={styles.infoLink}>View Forecast →</Text>
 					</View>
 				</View>
-
 				{/* bottom spacer so content never hides behind the tab bar */}
 				<View style={{ height: 28 }} />
 			</ScrollView>
+			<FloatingChatButton onClick={() => router.push("/chat" as any)} />
 		</SafeAreaView>
 	);
 }

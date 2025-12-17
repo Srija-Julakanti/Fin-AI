@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
+import axios from "axios";
 
 type Item = {
 	icon: keyof typeof Feather.glyphMap;
@@ -20,6 +21,9 @@ type Item = {
 	value?: string;
 	onPress?: () => void;
 };
+
+// If you have an env var for your API, swap this:
+const API_BASE_URL = "http://localhost:8000";
 
 export default function SettingsScreen() {
 	const { user, logout } = useAuth();
@@ -44,6 +48,73 @@ export default function SettingsScreen() {
 		);
 	};
 
+	const handleDeleteData = async () => {
+		try {
+			let USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
+			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-data`, { userId: USER_ID })
+			if (res.status != 200) {
+				const text = await res.data.message;
+				throw new Error(text || "Failed to delete data");
+			}
+
+			Alert.alert("Success", "Account data deleted successfully");
+		} catch (err: any) {
+			Alert.alert("Error", "Failed to delete data!! Please try again");
+
+		}
+	};
+
+	const confirmDeleteData = () => {
+		Alert.alert(
+			"Delete all data",
+			"This will permanently delete all your data. This action cannot be undone.\n\nAre you sure?",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Yes, delete everything",
+					style: "destructive",
+					onPress: handleDeleteData,
+				},
+			],
+			{ cancelable: true }
+		);
+	};
+
+	const handleDeleteAccount = async () => {
+		try {
+			let USER_ID = user?.id ?? '693a0451e654cdaccbb42d26';
+			const res = await axios.post(`${API_BASE_URL}/api/settings/delete-account`, { userId: USER_ID })
+			if (res.status != 200) {
+				const text = await res.data.message;
+				throw new Error(text || "Failed to delete account");
+			}
+			Alert.alert("Success", "Account deleted and navigate to login");
+
+			// Clear local auth + go to login
+			await logout();
+			router.replace("/login");
+		} catch (err: any) {
+			Alert.alert("Error", "Failed to delete account!! Please try again");
+
+		}
+	};
+
+	const confirmDeleteAccount = () => {
+		Alert.alert(
+			"Delete Account",
+			"This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you absolutely sure?",
+			[
+				{ text: "Cancel", style: "cancel" },
+				{
+					text: "Yes, delete my account",
+					style: "destructive",
+					onPress: handleDeleteAccount,
+				},
+			],
+			{ cancelable: true }
+		);
+	};
+
 	const sections: { title: string; items: Item[] }[] = [
 		{
 			title: "Account",
@@ -56,7 +127,7 @@ export default function SettingsScreen() {
 				{
 					icon: "credit-card",
 					label: "Linked Accounts",
-					value: "4 banks connected",
+					value: "12 banks connected",
 				},
 				{ icon: "bell", label: "Notifications", value: "Enabled" },
 			],
@@ -65,8 +136,16 @@ export default function SettingsScreen() {
 			title: "Security",
 			items: [
 				{ icon: "lock", label: "Change Password" },
-				{ icon: "shield", label: "Biometric Login", value: "Face ID enabled" },
-				{ icon: "shield", label: "Two-Factor Authentication", value: "On" },
+				{
+					icon: "trash-2", // Feather doesn't have "delete"
+					label: "Delete all the data",
+					onPress: confirmDeleteData,
+				},
+				{
+					icon: "trash-2",
+					label: "Delete Account",
+					onPress: confirmDeleteAccount,
+				},
 			],
 		},
 		{
@@ -105,8 +184,8 @@ export default function SettingsScreen() {
 							<Text style={{ fontSize: 28 }}>👩</Text>
 						</View>
 						<View style={{ flex: 1 }}>
-							<Text style={styles.profileName}>{user?.name ?? "User"}</Text>
-							<Text style={styles.profileEmail}>{user?.email ?? "—"}</Text>
+							<Text style={styles.profileName}>{user?.name ?? "Sarah T"}</Text>
+							<Text style={styles.profileEmail}>{user?.email ?? "saraht@gmail.com"}</Text>
 						</View>
 					</View>
 
@@ -272,7 +351,11 @@ const styles = StyleSheet.create({
 	rowLabel: {
 		color: "#0f172a",
 		marginBottom: 2,
-		fontWeight: Platform.select({ ios: "600", android: "700", default: "600" }),
+		fontWeight: Platform.select({
+			ios: "600",
+			android: "700",
+			default: "600",
+		}),
 	},
 	rowValue: { color: "#64748b", fontSize: 12 },
 	noticeCard: {
