@@ -174,7 +174,28 @@ npx expo run:ios
 ollama serve
 ollama run llama3
 ```
+### Terminal 4 — ML
 
+```bash
+cd backend/ML
+
+#1 Check both python and pip are installed
+python --version
+pip --version
+
+#2 Create a virtual environment
+python -m venv venv
+source venv/bin/activate        # macOS / Linux
+venv\Scripts\activate           # Windows
+
+#3 Install dependencies inside the requirements.txt file. 
+pip install -r requirements.txt
+
+#4 Run the file
+python creditCard_Recommendation.py
+
+
+```
 ---
 
 ## Common Issues & Tips
